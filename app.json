@@ -7,7 +7,8 @@
     "icon": "./assets/images/icon.png",
     "scheme": "homeservices",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "assets": ["./assets/fonts/"],
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true
     },
@@ -42,7 +43,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": true
+      "reactCompiler": false
     }
   }
 }

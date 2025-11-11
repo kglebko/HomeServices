@@ -1,7 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-
 import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
@@ -11,9 +10,13 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D64105', // цвет активной иконки
-        tabBarInactiveTintColor: '#DCDCDC', // неактивная иконка
-        headerShown: false, // скрыть заголовок сверху
+        tabBarActiveTintColor: '#D64105', 
+        tabBarInactiveTintColor: '#DCDCDC',
+        headerShown: false,
+        tabBarLabelStyle: {
+          fontFamily: 'Actay', 
+          fontSize: 11,
+    },
       }}
       >
 

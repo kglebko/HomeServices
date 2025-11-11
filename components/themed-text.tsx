@@ -1,31 +1,26 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
-
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Fonts } from '@/constants/theme';
 
 export type ThemedTextProps = TextProps & {
-  lightColor?: string;
-  darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'label' | 'paymentAmount' | 'paymentCurrency' | 'status' | 'button' | 'sectionTitle'| 'paymentData' ;
+  colorName?: keyof typeof import('@/constants/theme').Colors.dark;
 };
 
-export function ThemedText({
-  style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
-}: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+export function ThemedText({ style, type = 'default', colorName = 'text', ...rest }: ThemedTextProps) {
+  const color = useThemeColor({}, colorName);
 
   return (
     <Text
       style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        { color, fontFamily: 'Actay' },
+        type === 'default' && styles.default,
+        type === 'label' && styles.label,
+        type === 'paymentAmount' && styles.paymentAmount,
+        type === 'paymentCurrency' && styles.paymentCurrency,
+        type === 'button' && styles.button,
+        type === 'sectionTitle' && styles.sectionTitle,
+        type === 'paymentData' && styles.paymentData,
         style,
       ]}
       {...rest}
@@ -33,28 +28,37 @@ export function ThemedText({
   );
 }
 
+
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
+  label: {
+    fontSize: 14,
+    marginBottom: 6 
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+  paymentAmount: {
+    fontFamily: 'Actay-Bold',
+    fontSize: 36,
+    lineHeight: 40,
   },
-  subtitle: {
+  paymentCurrency: {
+    fontSize: 14,
+    marginLeft: 4,
+    marginBottom: 4,
+  },
+  button: {
+    fontSize: 20
+  },
+  sectionTitle: {
+    fontFamily: 'Actay',
     fontSize: 20,
-    fontWeight: 'bold',
+    marginLeft: 8
   },
-  link: {
-    lineHeight: 30,
-    fontSize: 16,
-    color: '#0a7ea4',
-  },
+  paymentData: {
+  fontSize: 18,
+  fontFamily: 'Actay-Bold',
+  marginBottom: 10,
+},
 });
