@@ -21,7 +21,7 @@ export function ScreenContainer({
   if (scrollable) {
     return (
       <SafeAreaView
-        edges={['left', 'right', 'bottom']} 
+        edges={['left', 'right']} 
         style={{ flex: 1, backgroundColor: background }}
       >
         <ScrollView
@@ -34,7 +34,7 @@ export function ScreenContainer({
             },
             style,
           ]}
-          contentContainerStyle={[{ paddingBottom: 40,}, contentContainerStyle,]}
+          contentContainerStyle={[{ paddingBottom: 20,}, contentContainerStyle,]}
           showsVerticalScrollIndicator={false}
         >
           {children}
@@ -45,14 +45,14 @@ export function ScreenContainer({
 
   return (
     <SafeAreaView
-      edges={['left', 'right', 'bottom']} 
+      edges={['left', 'right']} 
       style={[
         {
           flex: 1,
           backgroundColor: background,
           paddingHorizontal: 20,
           paddingTop: 24, 
-          paddingBottom: 40,
+          paddingBottom: 20,
         },
         style,
       ]}

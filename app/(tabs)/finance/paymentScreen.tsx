@@ -62,7 +62,7 @@ export default function PaymentScreen() {
       </ThemedView>
 
       <ThemedView withBackground={false} style={{ marginTop: 16 }}>
-        <ThemedText type="label">Проживающих (чел)</ThemedText>
+        <ThemedText type="label">Проживающих, чел.</ThemedText>
         <ThemedText type="paymentData">{residentsCount}</ThemedText>
       </ThemedView>
 

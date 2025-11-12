@@ -55,6 +55,27 @@ export default function FinanceLayout() {
           },
         }}
       />
+      <Stack.Screen
+        name="paymentHistory"
+        options={{
+          title: 'История платежей',
+          headerTitleStyle: {
+            fontFamily: 'Actay-Bold',
+            fontSize: 16,
+          },
+        }}
+      />
+      <Stack.Screen
+        name="meterHistory"
+        options={{
+          title: 'Предыдущие показания',
+          headerTitleStyle: {
+            fontFamily: 'Actay-Bold',
+            fontSize: 16,
+          },
+        }}
+      />
+
     </Stack>
   );
 }

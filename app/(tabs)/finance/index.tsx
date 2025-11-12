@@ -6,6 +6,7 @@ import { ThemedButton } from '@/components/themed-button';
 import { ThemedCard } from '@/components/themed-card';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Pressable } from 'react-native';
 
 export default function FinanceScreen() {
   const red = useThemeColor({}, 'accentRed');
@@ -31,21 +32,25 @@ export default function FinanceScreen() {
       />
 
       <ThemedView style={{ gap: 24 }}>
-        <ThemedView style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="time-outline" size={22} color={red} />
-          <ThemedText type="sectionTitle" style={{ marginLeft: 12 }}>
-            История платежей
-          </ThemedText>
-        </ThemedView>
+        <Pressable onPress={() => router.push('/(tabs)/finance/paymentHistory')}>
+          <ThemedView style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="time-outline" size={22} color={red} />
+            <ThemedText type="sectionTitle" style={{ marginLeft: 12 }}>
+              История платежей
+            </ThemedText>
+          </ThemedView>
+        </Pressable>
 
-        <ThemedView style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="reader-outline" size={22} color={red} />
-          <ThemedText type="sectionTitle" style={{ marginLeft: 12 }}>
-            Предыдущие показания счетчиков
-          </ThemedText>
-        </ThemedView>
+        <Pressable onPress={() => router.push('/(tabs)/finance/meterHistory')}>
+          <ThemedView style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Ionicons name="reader-outline" size={22} color={red} />
+            <ThemedText type="sectionTitle" style={{ marginLeft: 12 }}>
+              Предыдущие показания счетчиков
+            </ThemedText>
+          </ThemedView>
+        </Pressable>
       </ThemedView>
-      
+
     </ScreenContainer>
   );
 }

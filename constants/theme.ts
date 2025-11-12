@@ -12,6 +12,7 @@ export const Colors = {
     cardBackground: '#2B2B2B',
     tabIconDefault: '#9BA1A6',
     placeholders: '#9D9D9D',
+    green: '#10CB55',
     tabIconSelected: tintColorDark,
   },
 };
