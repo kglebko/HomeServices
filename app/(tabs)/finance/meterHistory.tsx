@@ -25,7 +25,7 @@ function MeterCard({ data }: { data: MeterMonthData }) {
         {data.meters.map((value, index) => (
           <View key={index} style={{ alignItems: 'center', flex: 1 }}>
             <ThemedText type="littleLabel">{`Счётчик ${index + 1}`}</ThemedText>
-            <ThemedText type="paymentStatus">{value}</ThemedText>
+            <ThemedText type="meters">{value}</ThemedText>
           </View>
         ))}
       </View>

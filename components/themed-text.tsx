@@ -1,11 +1,10 @@
-import { StyleSheet, Text, type TextProps } from 'react-native';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { Fonts } from '@/constants/theme';
+import { StyleSheet, Text, type TextProps } from 'react-native';
 
 export type ThemedTextProps = TextProps & {
   type?: 'default' | 'label' | 'paymentAmount' | 'paymentCurrency' | 'status' | 
                     'button' | 'sectionTitle'| 'paymentData' | 'screenTitle' | 'paymentStatus'|
-                    'costHistory' | 'littleLabel';
+                    'costHistory' | 'littleLabel'| 'meters';
   colorName?: keyof typeof import('@/constants/theme').Colors.dark;
 };
 
@@ -27,6 +26,7 @@ export function ThemedText({ style, type = 'default', colorName = 'text', ...res
         type === 'paymentStatus' && styles.paymentStatus,
         type === 'costHistory' && styles.costHistory,
         type === 'littleLabel' && styles.littleLabel,
+        type === 'meters' && styles.meters,
         style,
       ]}
       {...rest}
@@ -83,5 +83,8 @@ const styles = StyleSheet.create({
   },
   paymentStatus: {
     fontSize: 16,
+  },
+  meters: {
+    fontSize: 18
   },
 });

@@ -17,7 +17,7 @@ export default function FinanceLayout() {
               onPress={() => router.back()}
               style={{ paddingHorizontal: 10 }}
             >
-              <Ionicons name="chevron-back" size={24} color="#FD3C2C" />
+              <Ionicons name="chevron-back" size={24} color="#D64105" />
             </Pressable>
           ) : null,
       }}
