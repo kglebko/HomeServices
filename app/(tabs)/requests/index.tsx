@@ -32,42 +32,42 @@ export default function RequestsScreen() {
     {
       type: 'Электрик',
       date: '11.11.2025',
-      time: '13:00 – 15:00',
+      time: '14:40',
       price: '0,00 руб.',
       status: 'Отменена',
     },
     {
       type: 'Слесарь',
       date: '15.10.2025',
-      time: '13:00 – 15:00',
+      time: '13:10',
       price: '18,00 руб.',
       status: 'Выполнена',
     },
     {
       type: 'Плиточник',
       date: '02.10.2025',
-      time: '09:00 – 11:00',
+      time: '09:50',
       price: '45,00 руб.',
       status: 'Выполнена',
     },
     {
       type: 'Перевозчик',
       date: '22.09.2025',
-      time: '12:00 – 14:00',
+      time: '12:15',
       price: '80,00 руб.',
       status: 'Отменена',
     },
     {
       type: 'Маляр',
       date: '10.09.2025',
-      time: '15:00 – 17:00',
+      time: '16:10',
       price: '70,00 руб.',
       status: 'Выполнена',
     },
     {
       type: 'Курьер',
       date: '01.09.2025',
-      time: '09:30 – 10:30',
+      time: '9:40',
       price: '10,00 руб.',
       status: 'Выполнена',
     },
@@ -151,19 +151,19 @@ export default function RequestsScreen() {
 
       {historyRequests.map((req, index) => (
         <ThemedCard key={index} style={{ marginBottom: 16, padding: 16 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            <ThemedText type="paymentData">{req.type}</ThemedText>
+            <ThemedText type="paymentStatus" style={{ color: getStatusColor(req.status) }}>
+              {req.status}
+            </ThemedText>
+          </View>
+          
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <View>
-              <ThemedText type="paymentData" style={{marginBottom: 20}}>{req.type}</ThemedText>
               <ThemedText type="label">{req.date}</ThemedText>
               <ThemedText type="label">{req.time}</ThemedText>
-              <ThemedText type="label">{req.price}</ThemedText>
             </View>
-
-            <View style={{ justifyContent: 'center' }}>
-              <ThemedText type="paymentStatus" style={{ color: getStatusColor(req.status) }}>
-                {req.status}
-              </ThemedText>
-            </View>
+            <ThemedText type="paymentStatus">{req.price}</ThemedText>
           </View>
         </ThemedCard>
       ))}
