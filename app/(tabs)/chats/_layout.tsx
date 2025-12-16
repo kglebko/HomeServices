@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
 
-export default function RequestsLayout() {
+export default function ChatsLayout() {
     return (
         <Stack
             screenOptions={{
@@ -11,12 +11,13 @@ export default function RequestsLayout() {
                 headerTitleAlign: 'center',
                 headerStyle: { backgroundColor: '#1E1E1E' },
                 headerTintColor: '#fff',
+                headerTitleStyle: {
+                    fontFamily: 'Actay-Bold',
+                    fontSize: 16,
+                },
                 headerLeft: ({ canGoBack }) =>
                     canGoBack ? (
-                        <Pressable
-                            onPress={() => router.back()}
-                            style={{ paddingHorizontal: 10 }}
-                        >
+                        <Pressable onPress={() => router.back()} style={{ paddingHorizontal: 10 }}>
                             <Ionicons name="chevron-back" size={24} color="#D64105" />
                         </Pressable>
                     ) : null,
@@ -25,15 +26,26 @@ export default function RequestsLayout() {
             <Stack.Screen
                 name="index"
                 options={{
-                    title: 'Заявки',
-                    headerTitleStyle: {
-                        fontFamily: 'Actay-Bold',
-                        fontSize: 16,
-                    },
+                    title: 'Чаты',
                     headerLeft: () => null,
-                    gestureEnabled: false,
                     headerBackVisible: false,
+                    gestureEnabled: false,
                 }}
+            />
+
+            <Stack.Screen
+                name="management"
+                options={{ title: 'Управляющая компания' }}
+            />
+
+            <Stack.Screen
+                name="life"
+                options={{ title: 'Жизнь ЖК' }}
+            />
+
+            <Stack.Screen
+                name="house"
+                options={{ title: 'Чат дома' }}
             />
         </Stack>
     );
