@@ -1,31 +1,32 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
-
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { Fonts } from '@/constants/theme';
 
 export type ThemedTextProps = TextProps & {
-  lightColor?: string;
-  darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'label' | 'paymentAmount' | 'paymentCurrency' | 'status' | 
+                    'button' | 'sectionTitle'| 'paymentData' | 'screenTitle' | 'paymentStatus'|
+                    'costHistory' | 'littleLabel';
+  colorName?: keyof typeof import('@/constants/theme').Colors.dark;
 };
 
-export function ThemedText({
-  style,
-  lightColor,
-  darkColor,
-  type = 'default',
-  ...rest
-}: ThemedTextProps) {
-  const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
+export function ThemedText({ style, type = 'default', colorName = 'text', ...rest }: ThemedTextProps) {
+  const color = useThemeColor({}, colorName);
 
   return (
     <Text
       style={[
-        { color },
-        type === 'default' ? styles.default : undefined,
-        type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
-        type === 'subtitle' ? styles.subtitle : undefined,
-        type === 'link' ? styles.link : undefined,
+        { color, fontFamily: 'Actay' },
+        type === 'default' && styles.default,
+        type === 'label' && styles.label,
+        type === 'paymentAmount' && styles.paymentAmount,
+        type === 'paymentCurrency' && styles.paymentCurrency,
+        type === 'button' && styles.button,
+        type === 'sectionTitle' && styles.sectionTitle,
+        type === 'paymentData' && styles.paymentData,
+        type === 'screenTitle' && styles.screenTitle,
+        type === 'paymentStatus' && styles.paymentStatus,
+        type === 'costHistory' && styles.costHistory,
+        type === 'littleLabel' && styles.littleLabel,
         style,
       ]}
       {...rest}
@@ -33,28 +34,54 @@ export function ThemedText({
   );
 }
 
+
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,
-    lineHeight: 24,
+    lineHeight: 22,
   },
-  defaultSemiBold: {
+  label: {
+    fontSize: 14,
+    marginBottom: 6 
+  },
+  littleLabel: {
+    fontSize: 12,
+    marginBottom: 6 
+  },
+  costHistory: {
     fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
+    marginBottom: 6,
+    fontFamily: 'Actay-Bold',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+  paymentAmount: {
+    fontFamily: 'Actay-Bold',
+    fontSize: 36,
+    lineHeight: 40,
   },
-  subtitle: {
+  paymentCurrency: {
+    fontSize: 14,
+    marginLeft: 4,
+    marginBottom: 4,
+  },
+  button: {
+    fontSize: 20
+  },
+  sectionTitle: {
+    fontFamily: 'Actay',
     fontSize: 20,
-    fontWeight: 'bold',
+    marginLeft: 8
   },
-  link: {
-    lineHeight: 30,
+  screenTitle: {
+    fontFamily: 'Actay',
+    fontSize: 18,
+    textAlign: 'center'
+  },
+  paymentData: {
+    fontSize: 18,
+    fontFamily: 'Actay-Bold',
+    marginBottom: 10,
+  },
+  paymentStatus: {
     fontSize: 16,
-    color: '#0a7ea4',
   },
 });
