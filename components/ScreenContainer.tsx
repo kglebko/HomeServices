@@ -1,6 +1,6 @@
+import { useThemeColor } from '@/hooks/use-theme-color';
 import React, { ReactNode } from 'react';
 import { ScrollView, ViewStyle } from 'react-native';
-import { useThemeColor } from '@/hooks/use-theme-color';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenContainerProps = {
