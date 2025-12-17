@@ -1,8 +1,7 @@
 import React from 'react';
-import { Image, TouchableOpacity, TouchableOpacityProps } from 'react-native';
+import { Image, TouchableOpacity, TouchableOpacityProps, View } from 'react-native';
 import { ThemedCard } from '@/components/themed-card';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 
 type NewsCardProps = {
     image: any;
@@ -22,41 +21,52 @@ export function NewsCard({
                          }: NewsCardProps) {
 
     const cardContent = (
-        <ThemedCard style={{ width: 260, marginRight: 16, padding: 0 }}>
+        <ThemedCard style={{
+            width: 260,
+            marginRight: 16,
+            padding: 0,
+            height: 250,
+        }}>
             <Image
                 source={image}
                 style={{
                     width: '100%',
-                    height: 155,
+                    height: 140,
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10,
                 }}
             />
 
-            <ThemedView withBackground={false} style={{ padding: 12 }}>
-                {/* Категория (если передана) */}
+            <View style={{
+                padding: 12,
+                paddingTop: 8,
+                flex: 1,
+            }}>
+                {/* Категория с более темным фоном и скруглением */}
                 {category && (
-                    <ThemedView
-                        withBackground={false}
+                    <View
                         style={{
-                            backgroundColor: '#2A2A2A',
+                            backgroundColor: '#333333', // Более темный цвет
                             alignSelf: 'flex-start',
-                            paddingHorizontal: 10,
+                            paddingHorizontal: 12,
                             paddingVertical: 4,
-                            borderRadius: 10,
-                            marginBottom: 8
+                            borderRadius: 16, // Больше скругление
+                            marginBottom: 8,
+                            borderWidth: 1,
+                            borderColor: '#2A2A2A', // Граница для контраста
                         }}
                     >
                         <ThemedText
                             style={{
-                                fontSize: 10,
+                                fontSize: 11,
                                 color: '#8A8A8A',
-                                fontFamily: 'Actay'
+                                fontFamily: 'Actay',
+                                fontWeight: '500',
                             }}
                         >
                             {category}
                         </ThemedText>
-                    </ThemedView>
+                    </View>
                 )}
 
                 {/* Заголовок */}
@@ -65,9 +75,11 @@ export function NewsCard({
                         fontFamily: 'Actay',
                         fontSize: 14,
                         color: '#DCDCDC',
-                        lineHeight: 18
+                        lineHeight: 18,
+                        flex: 1,
                     }}
-                    numberOfLines={2}
+                    numberOfLines={category ? 2 : 3}
+                    ellipsizeMode="tail"
                 >
                     {title}
                 </ThemedText>
@@ -76,14 +88,15 @@ export function NewsCard({
                 <ThemedText
                     type="littleLabel"
                     style={{
-                        marginTop: 6,
                         fontSize: 12,
-                        color: '#8A8A8A'
+                        color: '#8A8A8A',
+                        marginTop: 6,
+                        fontFamily: 'Actay',
                     }}
                 >
                     {time}
                 </ThemedText>
-            </ThemedView>
+            </View>
         </ThemedCard>
     );
 

@@ -103,7 +103,9 @@ export default function HomeScreen() {
                     >
                         Услуги
                     </ThemedText>
-                    <ThemedText type="littleLabel">Все услуги</ThemedText>
+                    <TouchableOpacity onPress={() => router.push('/services' as any)}>
+                        <ThemedText type="littleLabel">Все услуги</ThemedText>
+                    </TouchableOpacity>
                 </ThemedView>
 
                 <ThemedView

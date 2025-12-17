@@ -142,21 +142,24 @@ export default function AllNewsScreen() {
 
                             {/* Контент */}
                             <View style={{ padding: 16 }}>
-                                {/* Категория */}
+                                {/* Категория с вашим стилем */}
                                 <View style={{
-                                    backgroundColor: '#2A2A2A',
+                                    backgroundColor: '#333333',
                                     alignSelf: 'flex-start',
                                     paddingHorizontal: 12,
                                     paddingVertical: 4,
-                                    borderRadius: 12,
-                                    marginBottom: 8
+                                    borderRadius: 16,
+                                    marginBottom: 8,
+                                    borderWidth: 1,
+                                    borderColor: '#2A2A2A',
                                 }}>
                                     <ThemedText style={{
-                                        fontSize: 12,
+                                        fontSize: 11,
                                         color: '#8A8A8A',
-                                        fontFamily: 'Actay'
+                                        fontFamily: 'Actay',
+                                        fontWeight: '500',
                                     }}>
-                                        {news.category}
+                                        {news.category} {/* Без toUpperCase() */}
                                     </ThemedText>
                                 </View>
 
@@ -165,36 +168,70 @@ export default function AllNewsScreen() {
                                     fontFamily: 'ActayWide-Bold',
                                     fontSize: 18,
                                     color: '#DCDCDC',
-                                    marginBottom: 8,
-                                    lineHeight: 24
+                                    marginBottom: 12,
+                                    lineHeight: 24,
                                 }}>
                                     {news.title}
                                 </ThemedText>
 
                                 {/* Время и автор */}
-                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <View style={{
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    marginBottom: 8,
+                                }}>
                                     <ThemedText style={{
                                         fontSize: 14,
                                         color: '#8A8A8A',
-                                        fontFamily: 'Actay'
+                                        fontFamily: 'Actay',
+                                        flex: 1,
                                     }}>
                                         {news.time} • {news.author}
                                     </ThemedText>
+                                </View>
 
-                                    {/* Лайки и комментарии */}
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                            <Ionicons name="heart-outline" size={16} color="#8A8A8A" />
-                                            <ThemedText style={{ fontSize: 12, color: '#8A8A8A' }}>
-                                                {news.likes}
-                                            </ThemedText>
-                                        </View>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                            <Ionicons name="chatbubble-outline" size={16} color="#8A8A8A" />
-                                            <ThemedText style={{ fontSize: 12, color: '#8A8A8A' }}>
-                                                {news.comments}
-                                            </ThemedText>
-                                        </View>
+                                {/* Лайки и комментарии на отдельной строке - выровнены по правому краю */}
+                                <View style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'flex-end', /* Выравнивание по правому краю */
+                                    gap: 20,
+                                    borderTopWidth: 1,
+                                    borderTopColor: '#2A2A2A',
+                                    paddingTop: 12,
+                                    marginTop: 4,
+                                }}>
+                                    {/* Лайки */}
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}>
+                                        <Ionicons name="heart-outline" size={18} color="#8A8A8A" />
+                                        <ThemedText style={{
+                                            fontSize: 14,
+                                            color: '#8A8A8A',
+                                            fontFamily: 'Actay',
+                                        }}>
+                                            {news.likes}
+                                        </ThemedText>
+                                    </View>
+
+                                    {/* Комментарии */}
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}>
+                                        <Ionicons name="chatbubble-outline" size={18} color="#8A8A8A" />
+                                        <ThemedText style={{
+                                            fontSize: 14,
+                                            color: '#8A8A8A',
+                                            fontFamily: 'Actay',
+                                        }}>
+                                            {news.comments}
+                                        </ThemedText>
                                     </View>
                                 </View>
                             </View>
