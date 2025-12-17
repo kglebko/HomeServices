@@ -51,7 +51,7 @@ export function ScreenContainer({
         {
           flex: 1,
           backgroundColor: background,
-          paddingHorizontal: 20,
+          paddingHorizontal: 15,
           paddingTop: 24, 
           paddingBottom: 20,
         },
