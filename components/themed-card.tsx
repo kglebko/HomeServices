@@ -18,7 +18,7 @@ export function ThemedCard({ children, style }: ThemedCardProps) {
           backgroundColor: cardColor,
           borderRadius: 10,
           padding: 16,
-          marginBottom: 24,
+          marginBottom: 16,
           shadowColor: '#000',
           shadowOpacity: 0.2,
           shadowRadius: 4,

@@ -1,16 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
+<<<<<<< HEAD
+=======
+import { HapticTab } from '@/components/haptic-tab';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+>>>>>>> origin/polina
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D64105', 
+        tabBarActiveTintColor: '#D64105',
         tabBarInactiveTintColor: '#DCDCDC',
         headerShown: false,
         tabBarLabelStyle: {
-          fontFamily: 'Actay', 
+          fontFamily: 'Actay',
           fontSize: 11,
     },
       }}
@@ -46,14 +52,15 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="chats"
-        options={{
-          title: 'Чаты',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" color={color} size={size} />
-          ),
-        }}
+        <Tabs.Screen
+            name="chats"
+            options={{
+                title: 'Чаты',
+                headerShown: false,
+                tabBarIcon: ({ color, size }) => (
+                    <Ionicons name="chatbubble-outline" size={size} color={color} />
+                ),
+            }}
       />
 
       <Tabs.Screen

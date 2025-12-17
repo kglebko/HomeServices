@@ -1,98 +1,168 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
+import React from 'react';
+import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedButton } from '@/components/themed-button';
+import { ThemedCard } from '@/components/themed-card';
+import { router } from 'expo-router';
+import { NewsCard } from '@/components/news/NewsCard';
+import { ServiceTile } from '@/components/services/ServiceTile';
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const NEWS_ITEMS = [
+        {
+            id: 1,
+            image: require('../../assets/images/news1.png'),
+            title: "Каждый подъезд дома был украшен к Новому году!",
+            time: "Вчера 19:00",
+            category: "Праздники",
+        },
+        {
+            id: 2,
+            image: require('../../assets/images/news2.png'),
+            title: "Обновление системы оплаты",
+            time: "2 дня назад",
+            category: "Уведомление",
+        },
+    ];
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    const handleNewsPress = (newsId: number) => {
+        router.push(`/news/${newsId}` as any);
+    };
+
+    return (
+        <ScreenContainer scrollable>
+            {/* ---- Блок с оплатой ---- */}
+            <ThemedCard style={{ marginTop: 65, padding: 16 }}>
+                <ThemedView
+                    withBackground={false}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                >
+                    <ThemedView withBackground={false} style={{ flexShrink: 1 }}>
+                        <ThemedText type="label">Сумма платежа</ThemedText>
+
+                        <ThemedView withBackground={false} style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+                            <ThemedText type="paymentAmount">93,50</ThemedText>
+                            <ThemedText type="paymentCurrency">руб.</ThemedText>
+                        </ThemedView>
+
+                        <ThemedText type="label" colorName="accentRed" style={{ marginTop: 6 }}>
+                            Не оплачено
+                        </ThemedText>
+                    </ThemedView>
+
+                    <ThemedButton
+                        title="Оплатить"
+                        style={{ width: 140, paddingVertical: 12, marginLeft: 16 }}
+                        onPress={() => router.push('/finance/paymentScreen')}
+                    />
+                </ThemedView>
+            </ThemedCard>
+
+            {/* ---- НОВОСТИ ---- */}
+            <ThemedView withBackground={false} style={{ marginTop: 9, marginBottom: 8 }}>
+                <ThemedView
+                    withBackground={false}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}
+                >
+                    <ThemedText
+                        type="sectionTitle"
+                        style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}
+                    >
+                        Новости
+                    </ThemedText>
+                    <TouchableOpacity onPress={() => router.push('/news' as any)}>
+                        <ThemedText type="littleLabel">Все новости</ThemedText>
+                    </TouchableOpacity>
+                </ThemedView>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    {NEWS_ITEMS.map((news) => (
+                        <NewsCard
+                            key={news.id}
+                            image={news.image}
+                            title={news.title}
+                            time={news.time}
+                            category={news.category}
+                            onPress={() => handleNewsPress(news.id)}
+                        />
+                    ))}
+                </ScrollView>
+            </ThemedView>
+
+            {/* ---- УСЛУГИ ---- */}
+            <ThemedView withBackground={false} style={{ marginTop: 9 }}>
+                <ThemedView
+                    withBackground={false}
+                    style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}
+                >
+                    <ThemedText
+                        type="sectionTitle"
+                        style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}
+                    >
+                        Услуги
+                    </ThemedText>
+                    <TouchableOpacity onPress={() => router.push('/services' as any)}>
+                        <ThemedText type="littleLabel">Все услуги</ThemedText>
+                    </TouchableOpacity>
+                </ThemedView>
+
+                <ThemedView
+                    withBackground={false}
+                    style={{
+                        flexDirection: 'row',
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between',
+                        marginTop: 0,
+                    }}
+                >
+                    <ServiceTile
+                        icon={require('../../assets/icons/santehnik.png')}
+                        title="Сантехник"
+                        time="10:00–19:00"
+                        price="от 20 руб."
+                    />
+                    <ServiceTile
+                        icon={require('../../assets/icons/electric.png')}
+                        title="Электрик"
+                        time="10:00–20:00"
+                        price="от 20 руб."
+                        onPress={() =>
+                            router.push({
+                                pathname: '/request',
+                                params: {
+                                    title: 'Электрик',
+                                    icon: 'electric',
+                                },
+                            })
+                        }
+                    />
+                    <ServiceTile
+                        icon={require('../../assets/icons/slesar.png')}
+                        title="Слесарь"
+                        time="10:00–20:00"
+                        price="от 30 руб."
+                    />
+                    <ServiceTile
+                        icon={require('../../assets/icons/cleaning.png')}
+                        title="Клининг"
+                        time="10:00–20:00"
+                        price="от 50 руб."
+                    />
+                    <ServiceTile
+                        icon={require('../../assets/icons/gruzchik.png')}
+                        title="Грузчик"
+                        time="10:00–19:00"
+                        price="от 40 руб."
+                    />
+                    <ServiceTile
+                        icon={require('../../assets/icons/master.png')}
+                        title="Мастер"
+                        price="от 100 руб."
+                    />
+                </ThemedView>
+            </ThemedView>
+        </ScreenContainer>
+    );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
