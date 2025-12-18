@@ -14,7 +14,7 @@ export default function ProfileScreen() {
 
   const handleLogoutConfirm = () => {
     setShowLogoutModal(false);
-    router.replace("/");
+    router.replace("/login");
   };
 
   return (
