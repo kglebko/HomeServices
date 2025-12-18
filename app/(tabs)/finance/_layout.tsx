@@ -1,7 +1,6 @@
-import { Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { router, Stack } from 'expo-router';
 import { Pressable } from 'react-native';
-import { router } from 'expo-router';
 
 export default function FinanceLayout() {
   return (

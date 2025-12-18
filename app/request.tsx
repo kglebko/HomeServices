@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Image, Pressable, Alert } from 'react-native';
+import { View, Image, Pressable, Platform } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
@@ -9,6 +9,7 @@ import { ThemedButton } from '@/components/themed-button';
 import { WeekDaysSelector } from '@/components/request/WeekDaysSelector';
 import { TimeSlotsSelector } from '@/components/request/TimeSlotsSelector';
 import { CommentInputWithAttach } from '@/components/request/CommentInputWithAttach';
+import { SystemAlert } from '@/components/SystemAlert'; // Импортируем наш компонент
 
 export default function ServiceRequestScreen() {
     const navigation = useNavigation();
@@ -22,6 +23,11 @@ export default function ServiceRequestScreen() {
         time: false,
         comment: false
     });
+
+    // Состояние для алерта
+    const [showAlert, setShowAlert] = useState(false);
+    const [alertTitle, setAlertTitle] = useState('');
+    const [alertMessage, setAlertMessage] = useState('');
 
     // Устанавливаем заголовок при монтировании
     useEffect(() => {
@@ -74,12 +80,16 @@ export default function ServiceRequestScreen() {
         setErrors(newErrors);
 
         if (newErrors.day || newErrors.time || newErrors.comment) {
-            let errorMessage = 'Пожалуйста, заполните:\n';
-            if (newErrors.day) errorMessage += '• День недели\n';
-            if (newErrors.time) errorMessage += '• Время\n';
-            if (newErrors.comment) errorMessage += '• Комментарий';
+            let errorMessage = 'Для продолжения заполните:\n\n';
+            if (newErrors.day) errorMessage += '•  День недели\n';
+            if (newErrors.time) errorMessage += '•  Время\n';
+            if (newErrors.comment) errorMessage += '•  Комментарий\n';
+            errorMessage += '\nПосле заполнения нажмите "Оформить заявку" еще раз';
 
-            Alert.alert('Не все поля заполнены', errorMessage);
+            // Показываем наш кастомный алерт
+            setAlertTitle('Не все поля заполнены');
+            setAlertMessage(errorMessage);
+            setShowAlert(true);
             return false;
         }
 
@@ -130,14 +140,6 @@ export default function ServiceRequestScreen() {
                     }}>
                         День недели
                     </ThemedText>
-                    {errors.day && (
-                        <ThemedText style={{
-                            fontSize: 12,
-                            color: '#FF5252',
-                        }}>
-                            Обязательное поле
-                        </ThemedText>
-                    )}
                 </View>
                 <WeekDaysSelector value={day} onChange={setDay} />
             </View>
@@ -152,14 +154,6 @@ export default function ServiceRequestScreen() {
                     }}>
                         Время
                     </ThemedText>
-                    {errors.time && (
-                        <ThemedText style={{
-                            fontSize: 12,
-                            color: '#FF5252',
-                        }}>
-                            Обязательное поле
-                        </ThemedText>
-                    )}
                 </View>
                 <TimeSlotsSelector value={time} onChange={setTime} />
             </View>
@@ -174,14 +168,6 @@ export default function ServiceRequestScreen() {
                     }}>
                         Комментарий
                     </ThemedText>
-                    {errors.comment && (
-                        <ThemedText style={{
-                            fontSize: 12,
-                            color: '#FF5252',
-                        }}>
-                            Обязательное поле
-                        </ThemedText>
-                    )}
                 </View>
                 <CommentInputWithAttach value={comment} onChange={setComment} />
             </View>
@@ -219,6 +205,14 @@ export default function ServiceRequestScreen() {
                     marginBottom: 40
                 }}
                 onPress={handleSubmit}
+            />
+
+            {/* Наш системный алерт */}
+            <SystemAlert
+                visible={showAlert}
+                title={alertTitle}
+                message={alertMessage}
+                onClose={() => setShowAlert(false)}
             />
         </ScreenContainer>
     );

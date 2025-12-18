@@ -1,7 +1,8 @@
 import { Colors } from '@/constants/theme';
 
+
 export function useThemeColor(
-  props: { dark?: string },
+  props: { light?: string; dark?: string } = {},
   colorName: keyof typeof Colors.dark
 ) {
 

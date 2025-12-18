@@ -1,6 +1,7 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React, { ReactNode } from 'react';
 import { ScrollView, ViewStyle } from 'react-native';
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenContainerProps = {
@@ -50,7 +51,7 @@ export function ScreenContainer({
         {
           flex: 1,
           backgroundColor: background,
-          paddingHorizontal: 20,
+          paddingHorizontal: 15,
           paddingTop: 24, 
           paddingBottom: 20,
         },
@@ -60,4 +61,5 @@ export function ScreenContainer({
       {children}
     </SafeAreaView>
   );
+
 }
