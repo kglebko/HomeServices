@@ -33,7 +33,7 @@ export default function ProfileScreen() {
 
         
         <View style={styles.infoBlock} >
-          <TouchableOpacity style={styles.infoRow} onPress={() => router.push("/login/loginAccount")}>
+          <TouchableOpacity style={styles.infoRow}>
             <Ionicons name="location" size={20} color="#fff" />
             <Text style={styles.infoText}>Адрес:<Text style={styles.infoAdress}> ул. Пономаренко 54-54</Text></Text>
           </TouchableOpacity>

@@ -1,10 +1,6 @@
 import { useThemeColor } from '@/hooks/use-theme-color';
 import React, { ReactNode } from 'react';
 import { ScrollView, ViewStyle } from 'react-native';
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/polina
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type ScreenContainerProps = {
@@ -56,7 +52,7 @@ export function ScreenContainer({
           backgroundColor: background,
           paddingHorizontal: 15,
           paddingTop: 24, 
-          paddingBottom: 20,
+          paddingBottom: 0,
         },
         style,
       ]}
@@ -64,8 +60,5 @@ export function ScreenContainer({
       {children}
     </SafeAreaView>
   );
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/polina
 }

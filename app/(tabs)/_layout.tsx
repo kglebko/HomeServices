@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
-<<<<<<< HEAD
-=======
+
 import { HapticTab } from '@/components/haptic-tab';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
->>>>>>> origin/polina
+
 
 export default function TabLayout() {
   return (

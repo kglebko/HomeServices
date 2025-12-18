@@ -1,7 +1,9 @@
 import { StyleSheet } from "react-native";
 
 export const CodeScreenStyles = StyleSheet.create({
- 
+ container:{
+   marginTop:90,
+},
   backButton: {
     width: 40,
     height: 40,
@@ -14,7 +16,7 @@ export const CodeScreenStyles = StyleSheet.create({
     fontFamily: "Actay-Bold",
     textAlign: "center",
     marginBottom: 16,
-    marginTop:50,
+    marginTop:100,
   },
   description: {
     color: "#999",

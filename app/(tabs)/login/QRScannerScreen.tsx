@@ -12,6 +12,7 @@ import {
     StyleSheet,
     Text,
     TouchableOpacity,
+    Vibration,
     View
 } from 'react-native';
 
@@ -24,6 +25,7 @@ export default function QRScannerScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [torchOn, setTorchOn] = useState(false);
   const [cameraType, setCameraType] = useState<'back' | 'front'>('back');
+  const [facing, setFacing] = useState<'front' | 'back'>('back');
   
   // Реф для камеры
   const cameraRef = useRef<Camera>(null);
@@ -33,15 +35,17 @@ export default function QRScannerScreen() {
 
   useEffect(() => {
     (async () => {
-      if (permission?.granted) {
-        setHasPermission(true);
-      } else if (permission?.canAskAgain) {
-        const { granted } = await requestPermission();
-        setHasPermission(granted);
-      } else {
-        setHasPermission(false);
+      if (permission) {
+        if (permission.granted) {
+          setHasPermission(true);
+        } else if (permission.canAskAgain) {
+          const { granted } = await requestPermission();
+          setHasPermission(granted);
+        } else {
+          setHasPermission(false);
+        }
+        setIsLoading(false);
       }
-      setIsLoading(false);
     })();
   }, [permission]);
 
@@ -50,8 +54,9 @@ export default function QRScannerScreen() {
     if (cameraRef.current) {
       try {
         // Включаем/выключаем фонарик
-        await cameraRef.current.torchAsync(!torchOn);
-        setTorchOn(!torchOn);
+        const newTorchState = !torchOn;
+        await cameraRef.current.torchAsync(torchOn);
+        setTorchOn(newTorchState);
       } catch (error) {
         console.log('Ошибка переключения фонарика:', error);
         Alert.alert(
@@ -66,7 +71,7 @@ export default function QRScannerScreen() {
 
   // Функция для переключения камеры (задняя/передняя)
   const toggleCameraType = () => {
-    setCameraType(current => (current === 'back' ? 'front' : 'back'));
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
   };
 
   const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
@@ -76,7 +81,6 @@ export default function QRScannerScreen() {
     
     // Добавляем вибро-фидбек
     if (Platform.OS !== 'web') {
-      const { Vibration } = require('react-native');
       Vibration.vibrate(100);
     }
     
@@ -169,7 +173,7 @@ export default function QRScannerScreen() {
     );
   }
 
-  if (hasPermission === false) {
+  if (!hasPermission) {
     return (
       <View style={[styles.container, styles.centerContent]}>
         <Ionicons name="camera-off" size={80} color="#D64105" style={styles.icon} />
@@ -180,15 +184,9 @@ export default function QRScannerScreen() {
         
         <TouchableOpacity 
           style={styles.permissionButton}
-          onPress={() => {
-            if (Platform.OS === 'ios') {
-              Linking.openURL('app-settings:');
-            } else {
-              Linking.openSettings();
-            }
-          }}
+          onPress={requestPermission}
         >
-          <Text style={styles.permissionButtonText}>Открыть настройки</Text>
+          <Text style={styles.permissionButtonText}>Разрешить камеру</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -210,20 +208,17 @@ export default function QRScannerScreen() {
 
   return (
     <View style={styles.container}>
-      <Camera
+      <Camera>
         ref={cameraRef}
         style={StyleSheet.absoluteFillObject}
-        type={cameraType}
+        type={facing}
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barCodeScannerSettings={{
-          barCodeTypes: ['qr', 'pdf417', 'ean13', 'code128'],
-        }}
         // Настройки камеры для лучшего сканирования
-        ratio="16:9"
-        autofocus={Camera.Constants.AutoFocus.on}
+        autoFocus="on"
         zoom={0}
-        whiteBalance={Camera.Constants.WhiteBalance.auto}
-      />
+        whiteBalance="auto"
+        ratio="16:9"
+      </Camera>
       
       {/* Overlay с рамкой для сканирования */}
       <View style={styles.overlay}>

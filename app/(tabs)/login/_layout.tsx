@@ -27,8 +27,11 @@ export default function LoginLayout() {
     <Stack.Screen name="index"/>
     <Stack.Screen name="scanQR"/>
   <Stack.Screen name="QRScannerScreen"/>
-      
-      
+  <Stack.Screen name="enterCode"/>
+   <Stack.Screen name="enterCode2"/>
+    <Stack.Screen name="forgotPassword"/>
+     <Stack.Screen name="registration"/> 
+      <Stack.Screen name="changeForgotPassword"/>
     </Stack>
     
   );

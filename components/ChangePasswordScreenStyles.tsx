@@ -2,6 +2,9 @@ import { StyleSheet } from "react-native";
 
 export const ChangePasswordScreenStyles = StyleSheet.create({
  
+container:{
+   marginTop:90,
+},
 
   description: {
     color: "#999",
@@ -33,7 +36,7 @@ export const ChangePasswordScreenStyles = StyleSheet.create({
     backgroundColor: "#ffffffff",
     borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 16,
     color: "#000000ff",
     fontSize: 16,
     fontFamily: "Actay",
@@ -104,4 +107,6 @@ export const ChangePasswordScreenStyles = StyleSheet.create({
     textAlign: "center",
     marginTop:10,
   },
+
+  
 });
