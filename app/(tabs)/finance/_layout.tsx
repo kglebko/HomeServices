@@ -75,6 +75,15 @@ export default function FinanceLayout() {
         }}
       />
 
+      <Stack.Screen
+        name="paymentSuccess"
+        options={{
+          headerShown: false,
+          gestureEnabled: false,
+        }}
+      />
+
+
     </Stack>
   );
 }

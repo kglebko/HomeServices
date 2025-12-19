@@ -33,7 +33,7 @@ export default function MeterHistory() {
   const userId = 1;
 
   const baseUrl = Platform.OS === 'android'
-      ? 'http://10.0.2.2:8080' //Android
+      ? 'http://10.0.2.2:8080'
       : 'http://192.168.31.18:8080';
       //: 'http://172.20.10.3:8080';
     
