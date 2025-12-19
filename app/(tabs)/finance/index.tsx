@@ -13,14 +13,14 @@ type CurrentBill = {
   id: number;
   accruedAmount: number;
   status: 'Оплачено' | 'Не оплачено';
-  period?: string; // например "ноябрь 2025 г."
+  period?: string; 
 };
 
 export default function FinanceScreen() {
   const red = useThemeColor({}, 'accentRed');
+  const green = useThemeColor({}, 'green');
   const [currentBill, setCurrentBill] = useState<CurrentBill | null>(null);
   const [loading, setLoading] = useState(true);
-  const green = useThemeColor({}, 'green');
 
   const userId = 1;
 
@@ -39,7 +39,7 @@ export default function FinanceScreen() {
           id: data.id,
           accruedAmount: data.accruedAmount,
           status: data.status,
-          period: data.period, // сервер должен вернуть "ноябрь 2025 г."
+          period: data.period,
         });
       } else {
         setCurrentBill(null);
@@ -61,11 +61,17 @@ export default function FinanceScreen() {
 
   const handlePaymentPress = () => {
     if (!currentBill) return;
-
     router.push({
       pathname: '/(tabs)/finance/paymentForServices',
       params: { billId: currentBill.id },
     });
+  };
+
+  const formatPeriod = (period?: string) => {
+    if (!period) return '';
+    const date = new Date(period);
+    const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('ru-RU', options);
   };
 
   if (loading) {
@@ -80,12 +86,12 @@ export default function FinanceScreen() {
     <ScreenContainer>
       {currentBill ? (
         <>
-          <ThemedCard>
+          <ThemedCard style={{ marginBottom: 16 }}>
             <ThemedText type="label">
-              Сумма платежа {currentBill.period ? `за ${currentBill.period}` : ''}
+              Сумма платежа {currentBill.period ? `за ${formatPeriod(currentBill.period)}` : ''}
             </ThemedText>
 
-            <ThemedView withBackground={false} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <ThemedView withBackground={false} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 8 }}>
               <ThemedText type="paymentAmount">
                 {currentBill.accruedAmount.toFixed(2).replace('.', ',')}
               </ThemedText>
@@ -103,14 +109,13 @@ export default function FinanceScreen() {
           <ThemedButton title="Оплатить" onPress={handlePaymentPress} />
         </>
       ) : (
-      <ThemedCard style={{ alignItems: 'center', padding: 24 }}>
-        <Ionicons name="checkmark-circle-outline" size={48} color={green} />
-        <ThemedText style={{ color: green, marginTop: 12 }}>
-          Все счета оплачены
-        </ThemedText>
-      </ThemedCard>
-    )
-    }
+        <ThemedCard style={{ alignItems: 'center', padding: 24 }}>
+          <Ionicons name="checkmark-circle-outline" size={48} color={green} />
+          <ThemedText style={{ color: green, marginTop: 12 }}>
+            Все счета оплачены
+          </ThemedText>
+        </ThemedCard>
+      )}
 
       <ThemedView style={{ gap: 24, marginTop: 16 }}>
         <Pressable onPress={() => router.push('/(tabs)/finance/paymentHistory')}>

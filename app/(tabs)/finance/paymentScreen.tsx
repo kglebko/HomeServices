@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View } from 'react-native';
+import { View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedView } from '@/components/themed-view';
@@ -9,10 +9,8 @@ import { ThemedCard } from '@/components/themed-card';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { router, useLocalSearchParams } from 'expo-router';
 import { ThemedInput } from '@/components/themed-input';
-import { Platform } from 'react-native';
 
 function CardItem({ type, last4 }: { type: string; last4: string }) {
-  const cardColor = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
   const accentRed = useThemeColor({}, 'accentRed');
 
@@ -28,7 +26,7 @@ function CardItem({ type, last4 }: { type: string; last4: string }) {
             marginRight: 16,
           }}
         />
-        <View style={{ justifyContent: 'center' }}>
+        <View>
           <ThemedText type="label">{type}</ThemedText>
           <ThemedText type="label">•••• {last4}</ThemedText>
         </View>
@@ -41,43 +39,36 @@ function CardItem({ type, last4 }: { type: string; last4: string }) {
 export default function PaymentScreen() {
   const params = useLocalSearchParams();
   const [amount, setAmount] = useState('');
-  const [billDetails, setBillDetails] = useState<{
-    accruedAmount: string;
-    meterSum?: string;
-  } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [billAmount, setBillAmount] = useState('0,00');
 
   const billId = params.billId as string;
-  const meter1 = params.meter1 as string || '0';
-  const meter2 = params.meter2 as string || '0';
-  const meter3 = params.meter3 as string || '0';
-  const meter4 = params.meter4 as string || '0';
-  const residentsCount = params.residentsCount as string || '1';
+  const residentsCount = (params.residentsCount as string) || '1';
 
-  const baseUrl = Platform.OS === 'android'
-    ? 'http://10.0.2.2:8080'
-    : 'http://192.168.31.18:8080';
+  const baseUrl =
+    Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080'
+      : 'http://192.168.31.18:8080';
+
   const userId = 1;
 
   useEffect(() => {
-    fetchBillDetails();
+    fetchBill();
   }, []);
 
-  const fetchBillDetails = async () => {
+  const fetchBill = async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/finance/current/${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && Object.keys(data).length > 0) {
-          setBillDetails({
-            accruedAmount: data.accruedAmount?.toFixed(2).replace('.', ',') || '0,00',
-            meterSum: data.meterSum ? data.meterSum.toFixed(2).replace('.', ',') : undefined
-          });
-          setAmount(data.accruedAmount?.toFixed(2) || '0');
-        }
+      const res = await fetch(`${baseUrl}/api/finance/current/${userId}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.accruedAmount != null) {
+        const formatted = data.accruedAmount.toFixed(2);
+        setAmount(formatted);
+        setBillAmount(formatted.replace('.', ','));
       }
-    } catch (error) {
-      console.error('Error fetching bill:', error);
+    } catch (e) {
+      console.error('Ошибка загрузки счёта:', e);
     }
   };
 
@@ -89,87 +80,56 @@ export default function PaymentScreen() {
 
     setLoading(true);
     try {
-      const meterReadingData = {
-        userId: userId,
-        meter1: parseInt(meter1) || 0,
-        meter2: parseInt(meter2) || 0,
-        meter3: parseInt(meter3) || 0,
-        meter4: parseInt(meter4) || 0
-      };
-
-      const meterResponse = await fetch(`${baseUrl}/api/meters/submit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(meterReadingData)
-      });
-
-      if (!meterResponse.ok) {
-        throw new Error('Ошибка при сохранении показаний');
-      }
-
-      const paymentResponse = await fetch(`${baseUrl}/api/finance/pay/${billId}`, {
+      const res = await fetch(`${baseUrl}/api/finance/pay/${billId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `amount=${parseFloat(amount)}`
+        body: `amount=${parseFloat(amount)}`,
       });
 
-      if (!paymentResponse.ok) {
+      if (!res.ok) {
         throw new Error('Ошибка при оплате');
       }
 
       router.replace('/(tabs)/finance/paymentSuccess');
-
-    } catch (error) {
-      console.error('Payment error:', error);
+    } catch (e) {
+      console.error('Payment error:', e);
       alert('Ошибка при проведении оплаты');
     } finally {
       setLoading(false);
     }
   };
 
-  const universalCount = 'По счетчикам 1,2,3,4';
-
   return (
     <ScreenContainer scrollable>
-
       <ThemedText type="label" style={{ marginBottom: 8 }}>
         С карты
       </ThemedText>
+
       <CardItem type="MasterCard" last4="5479" />
 
       <ThemedView withBackground={false} style={{ marginTop: 24 }}>
-        <ThemedText type="label">Универсальный подсчет</ThemedText>
-        <ThemedText type="paymentData">{universalCount}</ThemedText>
-      </ThemedView>
-
-      <ThemedView withBackground={false} style={{ marginTop: 16 }}>
         <ThemedText type="label">Проживающих, чел.</ThemedText>
         <ThemedText type="paymentData">{residentsCount}</ThemedText>
       </ThemedView>
 
-      <ThemedView withBackground={false} style={{ marginTop: 16, marginBottom: 16 }}>
-        <ThemedText type="label">По показаниям</ThemedText>
-        <ThemedText type="paymentData">{billDetails?.accruedAmount || '0,00'} руб.</ThemedText>
+      <ThemedView withBackground={false} style={{ marginVertical: 16 }}>
+        <ThemedText type="label">К оплате</ThemedText>
+        <ThemedText type="paymentData">{billAmount} руб.</ThemedText>
       </ThemedView>
 
       <ThemedInput
         label="Сумма платежа, руб."
         value={amount}
         onChangeText={setAmount}
-        placeholderValue={billDetails?.accruedAmount || '0'}
       />
 
       <ThemedButton
-        title={loading ? "Обработка..." : "Оплатить"}
+        title={loading ? 'Обработка...' : 'Оплатить'}
         onPress={handlePayment}
         disabled={loading}
       />
-
-      
     </ScreenContainer>
   );
 }

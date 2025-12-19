@@ -1,18 +1,16 @@
-import { View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedButton } from '@/components/themed-button';
-import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedInput } from '@/components/themed-input';
+import { ThemedButton } from '@/components/themed-button';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
 
 type BillDetails = {
   id: number;
-  period: string;
-  accruedDate: string;
-  status: string;
+  period: string; 
+  accruedDate: string; 
 };
 
 type PreviousReading = {
@@ -20,116 +18,120 @@ type PreviousReading = {
   meter2: number;
   meter3: number;
   meter4: number;
-  readingMonth: string;
 };
 
 export default function PaymentForServices() {
   const { billId } = useLocalSearchParams<{ billId: string }>();
+
   const [bill, setBill] = useState<BillDetails | null>(null);
   const [previousReadings, setPreviousReadings] = useState<PreviousReading | null>(null);
-  const [userInfo, setUserInfo] = useState<{ residentsCount: number } | null>(null);
-  const [meters, setMeters] = useState({ 
-    meter1: '', 
-    meter2: '', 
-    meter3: '', 
-    meter4: '' 
+  const [residentsCount, setResidentsCount] = useState<number>(1);
+  const [meters, setMeters] = useState({
+    meter1: '',
+    meter2: '',
+    meter3: '',
+    meter4: '',
   });
   const [loading, setLoading] = useState(true);
 
-  const baseUrl = Platform.OS === 'android'
-    ? 'http://10.0.2.2:8080'
-    : 'http://192.168.31.18:8080';
   const userId = 1;
+
+  const baseUrl =
+    Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080'
+      : 'http://192.168.31.18:8080';
 
   useEffect(() => {
     if (billId) {
-      fetchBillDetails();
-      fetchPreviousReadings();
-      fetchUserInfo();
+      Promise.all([fetchBill(), fetchPreviousReadings(), fetchUserInfo()]).finally(
+        () => setLoading(false)
+      );
     }
   }, [billId]);
 
-  const fetchBillDetails = async () => {
-    try {
-      const response = await fetch(`${baseUrl}/api/finance/bills/${userId}`);
-      if (response.ok) {
-        const bills = await response.json();
-        const currentBill = bills.find((b: any) => b.id === parseInt(billId!));
-        if (currentBill) {
-          const periodStr = new Date(currentBill.period).toLocaleDateString('ru-RU', {
-            month: 'long',
-            year: 'numeric'
-          });
-          const periodCapitalized = periodStr.charAt(0).toUpperCase() + periodStr.slice(1);
-          
-          setBill({
-            id: currentBill.id,
-            period: periodCapitalized,
-            accruedDate: new Date(currentBill.accruedDate).toLocaleDateString('ru-RU'),
-            status: currentBill.status
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching bill:', error);
+  const fetchBill = async () => {
+    const res = await fetch(`${baseUrl}/api/finance/bills/${userId}`);
+    if (!res.ok) return;
+
+    const bills = await res.json();
+    const current = bills.find((b: any) => b.id === Number(billId));
+
+    if (current) {
+      setBill({
+        id: current.id,
+        accruedDate: new Date(current.accruedDate).toLocaleDateString('ru-RU'),
+        period: current.period,
+      });
     }
   };
 
   const fetchPreviousReadings = async () => {
-    try {
-      const response = await fetch(`${baseUrl}/api/finance/meters/${userId}`);
-      if (response.ok) {
-        const readings = await response.json();
-        if (readings.length > 0) {
-          const latestReading = readings[0];
-          const monthStr = new Date(latestReading.readingMonth).toLocaleDateString('ru-RU', {
-            month: 'long',
-            year: 'numeric'
-          });
-          const monthCapitalized = monthStr.charAt(0).toUpperCase() + monthStr.slice(1);
-          
-          setPreviousReadings({
-            meter1: latestReading.meter1,
-            meter2: latestReading.meter2,
-            meter3: latestReading.meter3,
-            meter4: latestReading.meter4,
-            readingMonth: monthCapitalized
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching readings:', error);
+    const res = await fetch(`${baseUrl}/api/finance/meters/${userId}`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+    if (data.length > 0) {
+      setPreviousReadings({
+        meter1: data[0].meter1,
+        meter2: data[0].meter2,
+        meter3: data[0].meter3,
+        meter4: data[0].meter4,
+      });
     }
   };
 
   const fetchUserInfo = async () => {
-    try {
-      const response = await fetch(`${baseUrl}/api/finance/user/${userId}`);
-      if (response.ok) {
-        const user = await response.json();
-        setUserInfo({
-          residentsCount: user.residentsCount
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user:', error);
-    } finally {
-      setLoading(false);
-    }
+    const res = await fetch(`${baseUrl}/api/finance/user/${userId}`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+    setResidentsCount(data.residentsCount ?? 1);
   };
 
-  const handleContinue = () => {
-    router.push({
-      pathname: '/(tabs)/finance/paymentScreen',
-      params: { 
-        billId,
-        meter1: meters.meter1 || previousReadings?.meter1.toString() || '0',
-        meter2: meters.meter2 || previousReadings?.meter2.toString() || '0',
-        meter3: meters.meter3 || previousReadings?.meter3.toString() || '0',
-        meter4: meters.meter4 || previousReadings?.meter4.toString() || '0',
-        residentsCount: userInfo?.residentsCount.toString() || '1'
+  const handleContinue = async () => {
+    if (!bill) {
+      alert('Не найден счет');
+      return;
+    }
+
+    try {
+      const monthStr = new Date(bill.period).toISOString().slice(0, 7);
+
+      const payload = {
+        userId,
+        meter1: Number(meters.meter1 || previousReadings?.meter1 || 0),
+        meter2: Number(meters.meter2 || previousReadings?.meter2 || 0),
+        meter3: Number(meters.meter3 || previousReadings?.meter3 || 0),
+        meter4: Number(meters.meter4 || previousReadings?.meter4 || 0),
+        month: monthStr,
+      };
+
+      const response = await fetch(`${baseUrl}/api/meters/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Meters error:', text);
+        throw new Error();
       }
-    });
+
+      router.push({
+        pathname: '/(tabs)/finance/paymentScreen',
+        params: {
+          billId,
+          meter1: payload.meter1.toString(),
+          meter2: payload.meter2.toString(),
+          meter3: payload.meter3.toString(),
+          meter4: payload.meter4.toString(),
+          residentsCount: residentsCount.toString(),
+        },
+      });
+    } catch {
+      alert('Ошибка сохранения показаний');
+    }
   };
 
   if (loading) {
@@ -144,33 +146,37 @@ export default function PaymentForServices() {
     <ScreenContainer scrollable>
       {bill && (
         <ThemedView withBackground={false} style={{ marginBottom: 20 }}>
-          <ThemedText type="label">Дата выставления счета</ThemedText>
-          <ThemedText type="paymentData" style={{ marginBottom: 20 }}>{bill.accruedDate}</ThemedText>
+          <ThemedText type="label">Дата выставления</ThemedText>
+          <ThemedText type="paymentData">{bill.accruedDate}</ThemedText>
 
-          <ThemedText type="label">Период</ThemedText>
-          <ThemedText type="paymentData">{bill.period}</ThemedText>
+          <ThemedText type="label" style={{ marginTop: 12 }}>
+            Период
+          </ThemedText>
+          <ThemedText type="paymentData">
+            {new Date(bill.period).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })}
+          </ThemedText>
         </ThemedView>
       )}
 
-      <ThemedView withBackground={false} style={{ gap: 8, marginBottom: 12 }}>
-        {[1, 2, 3, 4].map((index) => (
-          <ThemedInput
-            key={index}
-            label={`Счетчик ${index} — текущие показания`}
-            value={meters[`meter${index}` as keyof typeof meters]}
-            placeholderValue={previousReadings?.[`meter${index}` as keyof PreviousReading]?.toString() || '0'}
-            onChangeText={(text) =>
-              setMeters((prev) => ({ ...prev, [`meter${index}`]: text.replace(/[^0-9]/g, '') }))
-            }
-            keyboardType="numeric"
-          />
-        ))}
-      </ThemedView>
+      {[1, 2, 3, 4].map((i) => (
+        <ThemedInput
+          key={i}
+          label={`Счетчик ${i}`}
+          keyboardType="numeric"
+          value={meters[`meter${i}` as keyof typeof meters]}
+          placeholderValue={
+            previousReadings?.[`meter${i}` as keyof PreviousReading]?.toString() || '0'
+          }
+          onChangeText={(text) =>
+            setMeters((p) => ({
+              ...p,
+              [`meter${i}`]: text.replace(/[^0-9]/g, ''),
+            }))
+          }
+        />
+      ))}
 
-      <ThemedButton
-        title="Продолжить"
-        onPress={handleContinue}
-      />
+      <ThemedButton title="Продолжить" onPress={handleContinue} />
     </ScreenContainer>
   );
 }

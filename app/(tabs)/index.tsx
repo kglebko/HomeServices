@@ -13,7 +13,7 @@ type CurrentBill = {
   id: number;
   accruedAmount: number;
   status: 'Оплачено' | 'Не оплачено';
-  period?: string; // например "ноябрь 2025 г."
+  period?: string;
 };
 
 export default function HomeScreen() {
@@ -69,6 +69,18 @@ export default function HomeScreen() {
     });
   };
 
+  const formatPeriod = (period?: string) => {
+    if (!period) return '';
+    try {
+      const date = new Date(period);
+      const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+      const formatted = date.toLocaleDateString('ru-RU', options);
+      return formatted.charAt(0).toLowerCase() + formatted.slice(1);
+    } catch {
+      return period;
+    }
+  };
+
   if (loading) {
     return (
       <ScreenContainer>
@@ -85,7 +97,7 @@ export default function HomeScreen() {
             
             <ThemedView withBackground={false} style={{ flexShrink: 1 }}>
               <ThemedText type="label">
-                Сумма платежа {currentBill.period ? `за ${currentBill.period}` : ''}
+                Сумма платежа
               </ThemedText>
 
               <ThemedView withBackground={false} style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
