@@ -2,6 +2,9 @@ import { StyleSheet } from "react-native";
 
 export const ForgotPassword = StyleSheet.create({
  
+  container:{
+   marginTop:90,
+},
   description: {
     color: "#fff",
     fontSize: 18,

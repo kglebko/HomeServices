@@ -29,7 +29,7 @@ export default function ScanQRScreen() {
     // Имитация задержки для показа индикатора
     setTimeout(() => {
       setIsScanning(false);
-      router.push('/login/QRScannerScreen');
+      router.push('/login/registration');
     }, 500);
   };
 
@@ -40,8 +40,8 @@ export default function ScanQRScreen() {
 
   return (
     <ScreenContainer>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}  >
+       
           {/* Заголовок */}
           <View style={styles.header}>
             <Text style={styles.title}>Сканировать{"\n"}QR-код</Text>
@@ -131,7 +131,7 @@ export default function ScanQRScreen() {
             <Text style={styles.receiptText}>Как выглядит QR-код на квитанции?</Text>
             <Ionicons name="chevron-forward" size={16} color="#666" />
           </TouchableOpacity>
-        </View>
+        
       </ScrollView>
     </ScreenContainer>
   );
@@ -139,17 +139,17 @@ export default function ScanQRScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    paddingHorizontal: 20,
+    
     paddingTop: 60,
-    paddingBottom: 40,
+   
   },
   header: {
+    marginTop:60,
     marginBottom: 40,
   },
   title: {
     color: "#fff",
-    fontSize: 40,
+    fontSize: 36,
     fontFamily: "Actay-Bold",
     textAlign: "left",
     marginBottom: 16,

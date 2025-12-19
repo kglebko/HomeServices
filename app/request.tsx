@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Image, Pressable, Platform } from 'react-native';
+import React, { useState, useEffect, useMemo } from 'react';
+import { View, Image, Pressable } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
@@ -9,7 +9,30 @@ import { ThemedButton } from '@/components/themed-button';
 import { WeekDaysSelector } from '@/components/request/WeekDaysSelector';
 import { TimeSlotsSelector } from '@/components/request/TimeSlotsSelector';
 import { CommentInputWithAttach } from '@/components/request/CommentInputWithAttach';
-import { SystemAlert } from '@/components/SystemAlert'; // Импортируем наш компонент
+import { SystemAlert } from '@/components/SystemAlert';
+
+// Функция для получения текста диапазона недели
+const getWeekRangeText = () => {
+    const today = new Date();
+    const currentDay = today.getDay();
+
+    // Находим понедельник текущей недели
+    const monday = new Date(today);
+    const daysToMonday = currentDay === 0 ? 1 : (currentDay === 1 ? 0 : 1 - currentDay);
+    monday.setDate(today.getDate() + daysToMonday);
+
+    // Находим пятницу текущей недели (только рабочие дни)
+    const friday = new Date(monday);
+    friday.setDate(monday.getDate() + 4);
+
+    const formatDate = (date: Date) => {
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        return `${day}.${month}`;
+    };
+
+    return `${formatDate(monday)} - ${formatDate(friday)}`;
+};
 
 export default function ServiceRequestScreen() {
     const navigation = useNavigation();
@@ -28,6 +51,9 @@ export default function ServiceRequestScreen() {
     const [showAlert, setShowAlert] = useState(false);
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
+
+    // Получаем текст диапазона недели
+    const weekRangeText = useMemo(() => getWeekRangeText(), []);
 
     // Устанавливаем заголовок при монтировании
     useEffect(() => {
@@ -98,6 +124,9 @@ export default function ServiceRequestScreen() {
 
     const handleSubmit = () => {
         if (validateForm()) {
+            // Здесь можно добавить логику отправки данных
+            console.log('Отправка данных:', { day, time, comment });
+
             // Переход на экран подтверждения
             router.push('/request-success' as any);
         }
@@ -132,7 +161,12 @@ export default function ServiceRequestScreen() {
 
             {/* День недели */}
             <View style={{ marginBottom: 24 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 12
+                }}>
                     <ThemedText type="default" style={{
                         fontSize: 16,
                         fontWeight: '600',
@@ -140,13 +174,39 @@ export default function ServiceRequestScreen() {
                     }}>
                         День недели
                     </ThemedText>
+
+                    {/* Диапазон дат текущей недели */}
+                    <ThemedText type="default" style={{
+                        fontSize: 12,
+                        color: '#8E8E93',
+                        fontFamily: 'System'
+                    }}>
+                        {weekRangeText}
+                    </ThemedText>
                 </View>
                 <WeekDaysSelector value={day} onChange={setDay} />
+
+                {/* Сообщение об ошибке (если есть) */}
+                {errors.day && (
+                    <ThemedText style={{
+                        color: '#FF3B30',
+                        fontSize: 12,
+                        marginTop: 8,
+                        marginLeft: 4
+                    }}>
+                        Пожалуйста, выберите день недели
+                    </ThemedText>
+                )}
             </View>
 
             {/* Время */}
             <View style={{ marginBottom: 24 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 12
+                }}>
                     <ThemedText type="default" style={{
                         fontSize: 16,
                         fontWeight: '600',
@@ -156,11 +216,28 @@ export default function ServiceRequestScreen() {
                     </ThemedText>
                 </View>
                 <TimeSlotsSelector value={time} onChange={setTime} />
+
+                {/* Сообщение об ошибке (если есть) */}
+                {errors.time && (
+                    <ThemedText style={{
+                        color: '#FF3B30',
+                        fontSize: 12,
+                        marginTop: 8,
+                        marginLeft: 4
+                    }}>
+                        Пожалуйста, выберите время
+                    </ThemedText>
+                )}
             </View>
 
             {/* Комментарий */}
             <View style={{ marginBottom: 24 }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 12
+                }}>
                     <ThemedText type="default" style={{
                         fontSize: 16,
                         fontWeight: '600',
@@ -170,6 +247,18 @@ export default function ServiceRequestScreen() {
                     </ThemedText>
                 </View>
                 <CommentInputWithAttach value={comment} onChange={setComment} />
+
+                {/* Сообщение об ошибке (если есть) */}
+                {errors.comment && (
+                    <ThemedText style={{
+                        color: '#FF3B30',
+                        fontSize: 12,
+                        marginTop: 8,
+                        marginLeft: 4
+                    }}>
+                        Пожалуйста, добавьте комментарий
+                    </ThemedText>
+                )}
             </View>
 
             {/* Блок стоимости */}

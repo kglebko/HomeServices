@@ -53,7 +53,7 @@ export function ScreenContainer({
           backgroundColor: background,
           paddingHorizontal: 15,
           paddingTop: 24, 
-          paddingBottom: 20,
+          paddingBottom: 0,
         },
         style,
       ]}
