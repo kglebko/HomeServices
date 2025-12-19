@@ -121,11 +121,7 @@ export default function PaymentScreen() {
         throw new Error('Ошибка при оплате');
       }
 
-      alert('Оплата успешно проведена!');
-      
-      setTimeout(() => {
-        router.replace('/(tabs)/finance');
-      }, 1000);
+      router.replace('/(tabs)/finance/paymentSuccess');
 
     } catch (error) {
       console.error('Payment error:', error);
