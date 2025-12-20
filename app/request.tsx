@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Image, Pressable } from 'react-native';
+import { View, Image, Pressable, Platform } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
@@ -36,7 +36,13 @@ const getWeekRangeText = () => {
 
 export default function ServiceRequestScreen() {
     const navigation = useNavigation();
-    const { title } = useLocalSearchParams<{ title?: string }>();
+    const { title, serviceId, price, startTime: paramStartTime, endTime: paramEndTime } = useLocalSearchParams<{
+        title?: string,
+        serviceId?: string,
+        price?: string,
+        startTime?: string,
+        endTime?: string
+    }>();
 
     const [day, setDay] = useState<string | null>(null);
     const [time, setTime] = useState<string | null>(null);
@@ -46,6 +52,7 @@ export default function ServiceRequestScreen() {
         time: false,
         comment: false
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Состояние для алерта
     const [showAlert, setShowAlert] = useState(false);
@@ -112,7 +119,6 @@ export default function ServiceRequestScreen() {
             if (newErrors.comment) errorMessage += '•  Комментарий\n';
             errorMessage += '\nПосле заполнения нажмите "Оформить заявку" еще раз';
 
-            // Показываем наш кастомный алерт
             setAlertTitle('Не все поля заполнены');
             setAlertMessage(errorMessage);
             setShowAlert(true);
@@ -122,13 +128,137 @@ export default function ServiceRequestScreen() {
         return true;
     };
 
-    const handleSubmit = () => {
-        if (validateForm()) {
-            // Здесь можно добавить логику отправки данных
-            console.log('Отправка данных:', { day, time, comment });
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
 
-            // Переход на экран подтверждения
-            router.push('/request-success' as any);
+        setIsSubmitting(true);
+
+        try {
+            // Преобразуем день недели в дату
+            const convertDayToDate = (dayOfWeek: string) => {
+                const daysMap: Record<string, number> = {
+                    'Пн': 1, 'Вт': 2, 'Ср': 3, 'Чт': 4, 'Пт': 5
+                };
+
+                const today = new Date();
+                const currentDay = today.getDay();
+                let targetDay = daysMap[dayOfWeek] || 1;
+
+                // Находим ближайший день
+                let daysToAdd = 0;
+                if (currentDay === 0) {
+                    daysToAdd = targetDay;
+                } else if (currentDay <= targetDay) {
+                    daysToAdd = targetDay - currentDay;
+                } else {
+                    daysToAdd = 7 - currentDay + targetDay;
+                }
+
+                if (daysToAdd === 0) daysToAdd = 7;
+
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + daysToAdd);
+                return targetDate;
+            };
+
+            // Извлекаем только время начала из выбранного значения
+            // Если time содержит диапазон (например "10:00 – 12:00"), берем первую часть
+            const extractStartTime = (timeValue: string) => {
+                if (timeValue.includes('–')) {
+                    return timeValue.split('–')[0].trim();
+                } else if (timeValue.includes('-')) {
+                    return timeValue.split('-')[0].trim();
+                }
+                return timeValue;
+            };
+
+            // Получаем время окончания:
+            // 1. Из параметров endTime, если передано
+            // 2. Из выбранного времени, если это диапазон
+            // 3. Добавляем 2 часа к начальному времени
+            const getEndTime = (startTime: string) => {
+                // Если передано время окончания из параметров
+                if (paramEndTime) {
+                    return paramEndTime;
+                }
+
+                // Если выбранный time содержит диапазон
+                if (time && time.includes('–')) {
+                    const parts = time.split('–');
+                    return parts[1]?.trim() || '12:00';
+                } else if (time && time.includes('-')) {
+                    const parts = time.split('-');
+                    return parts[1]?.trim() || '12:00';
+                }
+
+                // По умолчанию добавляем 2 часа к начальному времени
+                const [hours, minutes] = startTime.split(':').map(Number);
+                let endHours = hours + 2;
+                if (endHours >= 24) endHours -= 24;
+                return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            };
+
+            const selectedDate = convertDayToDate(day!);
+            const startTimeValue = extractStartTime(time!);
+            const endTimeValue = getEndTime(startTimeValue);
+
+            // Данные для отправки
+            const requestData = {
+                serviceId: parseInt(serviceId || '2'),
+                selectedDate: selectedDate.toISOString().split('T')[0],
+                selectedStartTime: startTimeValue + ':00',
+                selectedEndTime: endTimeValue + ':00',
+                comment: comment,
+                userId: 1,
+                estimatedPrice: parseFloat(price || '20.00')
+            };
+
+            console.log('Отправка данных:', requestData);
+
+            // URL бэкенда
+            const baseUrl = Platform.OS === 'android'
+                ? 'http://10.0.2.2:8080'
+                : 'http://192.168.31.18:8080'; // Ваш IP
+
+            // Отправляем запрос
+            const response = await fetch(`${baseUrl}/api/requests`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Ошибка ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Заявка создана:', result);
+
+            // Переход на экран успеха
+            router.push({
+                pathname: '/request-success',
+                params: { requestId: result.id.toString() }
+            } as any);
+
+        } catch (error: any) {
+            console.error('Ошибка:', error);
+
+            let errorMessage = 'Не удалось создать заявку. ';
+            if (error.message.includes('Network request failed')) {
+                errorMessage += 'Проблема с сетью. Проверьте:\n1. Запущен ли бэкенд\n2. IP адрес сервера';
+            } else {
+                errorMessage += error.message;
+            }
+
+            setAlertTitle('Ошибка создания заявки');
+            setAlertMessage(errorMessage);
+            setShowAlert(true);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -186,7 +316,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <WeekDaysSelector value={day} onChange={setDay} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.day && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -217,7 +346,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <TimeSlotsSelector value={time} onChange={setTime} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.time && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -248,7 +376,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <CommentInputWithAttach value={comment} onChange={setComment} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.comment && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -282,18 +409,19 @@ export default function ServiceRequestScreen() {
                     fontSize: 15,
                     color: '#DCDCDC',
                 }}>
-                    от 20 руб.
+                    {price ? `от ${price} руб.` : 'от 20 руб.'}
                 </ThemedText>
             </View>
 
             {/* Кнопка */}
             <ThemedButton
-                title="Оформить заявку"
+                title={isSubmitting ? "Отправка..." : "Оформить заявку"}
                 style={{
                     marginTop: 0,
                     marginBottom: 40
                 }}
                 onPress={handleSubmit}
+                disabled={isSubmitting}
             />
 
             {/* Наш системный алерт */}

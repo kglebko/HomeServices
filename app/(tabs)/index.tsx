@@ -109,12 +109,19 @@ export default function HomeScreen() {
     };
 
     const handleServicePress = (service: ServiceItem) => {
+        // Разбираем строку времени "10:00-20:00" на начало и конец
+        const timeRange = service.workHours || '10:00-20:00';
+        const [startTime, endTime] = timeRange.split('-');
+
         router.push({
             pathname: '/request',
             params: {
                 serviceId: service.id.toString(),
                 title: service.name,
                 price: service.price.toString(),
+                workHours: timeRange, // Передаем весь диапазон
+                startTime: startTime.trim(), // Начальное время
+                endTime: endTime?.trim() // Конечное время (если есть)
             },
         });
     };
