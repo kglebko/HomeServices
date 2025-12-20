@@ -1,10 +1,8 @@
-// screens/PaymentHistory.tsx
-import React from 'react';
-import { View } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedCard } from '@/components/themed-card';
+import React, { useEffect, useState } from 'react';
+import { View, Platform } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ThemedCard } from '@/components/themed-card';
+import { ThemedText } from '@/components/themed-text';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
 type MonthData = {
@@ -16,6 +14,10 @@ type MonthData = {
   paidDate?: string;
 };
 
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString('ru-RU');
+}
+
 function MonthCard({ data }: { data: MonthData }) {
   const red = useThemeColor({}, 'accentRed');
   const green = useThemeColor({}, 'green');
@@ -23,7 +25,7 @@ function MonthCard({ data }: { data: MonthData }) {
   const statusColor = data.status === 'Оплачено' ? green : red;
 
   return (
-    <ThemedCard style={{ marginBottom: 16, padding: 16, paddingBottom: 12 }}>
+    <ThemedCard style={{ marginBottom: 16, padding: 16 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
         <ThemedText type="paymentData">{data.month}</ThemedText>
         <ThemedText type="paymentStatus" style={{ color: statusColor }}>
@@ -42,7 +44,7 @@ function MonthCard({ data }: { data: MonthData }) {
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         <View>
           <ThemedText type="label">Оплачено</ThemedText>
-          <ThemedText type="label">{data.paidDate || ''}</ThemedText>
+          <ThemedText type="label">{data.paidDate ?? ''}</ThemedText>
         </View>
         <ThemedText type="costHistory">{data.paidAmount} руб.</ThemedText>
       </View>
@@ -51,23 +53,36 @@ function MonthCard({ data }: { data: MonthData }) {
 }
 
 export default function PaymentHistory() {
-  const red = useThemeColor({}, 'accentRed');
-  const green = useThemeColor({}, 'green');
+  const [monthsData, setMonthsData] = useState<MonthData[]>([]);
+  const userId = 1;
 
-  const monthsData: MonthData[] = [
-    { month: 'Октябрь', status: 'Не оплачено', accruedAmount: '90,90', accruedDate: '11.11.2025', paidAmount: '0,00' },
-    { month: 'Сентябрь', status: 'Оплачено', accruedAmount: '92,80', accruedDate: '10.10.2025', paidAmount: '92,80', paidDate: '14.10.2025' },
-    { month: 'Август', status: 'Оплачено', accruedAmount: '92,50', accruedDate: '10.09.2025', paidAmount: '92,50', paidDate: '15.09.2025' },
-    { month: 'Июль', status: 'Оплачено', accruedAmount: '91,00', accruedDate: '10.08.2025', paidAmount: '91,00', paidDate: '14.08.2025' },
-    { month: 'Июнь', status: 'Оплачено', accruedAmount: '90,00', accruedDate: '10.07.2025', paidAmount: '90,00', paidDate: '12.07.2025' },
-    { month: 'Май', status: 'Оплачено', accruedAmount: '89,50', accruedDate: '10.06.2025', paidAmount: '89,50', paidDate: '12.06.2025' },
-    { month: 'Апрель', status: 'Оплачено', accruedAmount: '88,00', accruedDate: '10.05.2025', paidAmount: '88,00', paidDate: '12.05.2025' },
-    { month: 'Март', status: 'Оплачено', accruedAmount: '87,00', accruedDate: '10.04.2025', paidAmount: '87,00', paidDate: '12.04.2025' },
-    { month: 'Февраль', status: 'Оплачено', accruedAmount: '86,50', accruedDate: '10.03.2025', paidAmount: '86,50', paidDate: '12.03.2025' },
-    { month: 'Январь', status: 'Оплачено', accruedAmount: '85,00', accruedDate: '10.02.2025', paidAmount: '85,00', paidDate: '12.02.2025' },
-    { month: 'Декабрь', status: 'Оплачено', accruedAmount: '84,50', accruedDate: '10.01.2025', paidAmount: '84,50', paidDate: '12.01.2025' },
-    { month: 'Ноябрь', status: 'Оплачено', accruedAmount: '83,00', accruedDate: '10.12.2024', paidAmount: '83,00', paidDate: '12.12.2024' },
-  ];
+  const baseUrl =
+    Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080'
+      : 'http://192.168.31.18:8080';
+
+  useEffect(() => {
+    fetch(`${baseUrl}/api/finance/payments/${userId}`)
+      .then(res => res.json())
+      .then(data => {
+        const formatted: MonthData[] = data.map((item: any) => {
+          const monthStr = new Date(item.period)
+            .toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+
+          return {
+            month: monthStr.charAt(0).toUpperCase() + monthStr.slice(1),
+            status: item.status,
+            accruedAmount: item.accruedAmount.toFixed(2).replace('.', ','),
+            accruedDate: formatDate(item.accruedDate),
+            paidAmount: item.paidAmount.toFixed(2).replace('.', ','),
+            paidDate: item.paidDate ? formatDate(item.paidDate) : undefined,
+          };
+        });
+
+        setMonthsData(formatted);
+      })
+      .catch(err => console.error('Fetch error:', err));
+  }, []);
 
   return (
     <ScreenContainer scrollable>

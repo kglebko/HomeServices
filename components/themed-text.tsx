@@ -4,7 +4,7 @@ import { StyleSheet, Text, type TextProps } from 'react-native';
 export type ThemedTextProps = TextProps & {
   type?: 'default' | 'label' | 'paymentAmount' | 'paymentCurrency' | 'status' | 
                     'button' | 'sectionTitle'| 'paymentData' | 'screenTitle' | 'paymentStatus'|
-                    'costHistory' | 'littleLabel'| 'meters';
+                    'costHistory' | 'littleLabel'| 'meters' | 'paymentSuccess';
   colorName?: keyof typeof import('@/constants/theme').Colors.dark;
 };
 
@@ -27,6 +27,7 @@ export function ThemedText({ style, type = 'default', colorName = 'text', ...res
         type === 'costHistory' && styles.costHistory,
         type === 'littleLabel' && styles.littleLabel,
         type === 'meters' && styles.meters,
+        type === 'paymentSuccess' && styles.paymentSuccess,
         style,
       ]}
       {...rest}
@@ -78,6 +79,11 @@ const styles = StyleSheet.create({
   },
   paymentData: {
     fontSize: 18,
+    fontFamily: 'Actay-Bold',
+    marginBottom: 10,
+  },
+  paymentSuccess: {
+    fontSize: 24,
     fontFamily: 'Actay-Bold',
     marginBottom: 10,
   },
