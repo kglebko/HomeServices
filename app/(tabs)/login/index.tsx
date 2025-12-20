@@ -136,9 +136,9 @@ export default function LoginScreen() {
                 console.log('🔄 Переход в /admin');
 
                 // Небольшая задержка для стабильности
-                setTimeout(() => {
-                    router.replace("/admin-simple");
-                }, 50);
+                // setTimeout(() => {
+                //     router.replace("/admin-simple");
+                // }, 50);
 
             } else {
                 // Здесь будет обычный вход пользователя

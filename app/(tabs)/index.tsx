@@ -10,7 +10,7 @@ import { ThemedCard } from '@/components/themed-card';
 import { router, useFocusEffect } from 'expo-router';
 import { NewsCard } from '@/components/news/NewsCard';
 import { ServiceTile } from '@/components/services/ServiceTile';
-import { fetchLatestNews, NewsItem, getFullImageUrl, getRelativeTime } from '@/api/newsApi';
+import { fetchLatestNews, NewsItem, getRelativeTime } from '@/api/newsApi';
 import { fetchLatestServices, ServiceItem } from '@/api/servicesApi';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -19,6 +19,30 @@ type CurrentBill = {
     accruedAmount: number;
     status: 'Оплачено' | 'Не оплачено';
     period?: string;
+};
+
+// Функция для получения полного URL изображения
+const getFullImageUrl = (imageUrl: string): string => {
+    if (!imageUrl || imageUrl.trim() === '') {
+        return '';
+    }
+
+    // Если уже полный URL
+    if (imageUrl.startsWith('http')) {
+        return imageUrl;
+    }
+
+    // ЗАМЕНИТЕ НА СВОЙ IP АДРЕС!
+    const LOCAL_IP = '192.168.0.104'; // ← ВАЖНО: замените на свой IP!
+    const BASE_URL = `http://${LOCAL_IP}:8080`;
+
+    // Если относительный путь начинается с /uploads/
+    if (imageUrl.startsWith('/uploads/')) {
+        return `${BASE_URL}${imageUrl}`;
+    }
+
+    // Если только имя файла, добавляем /uploads/
+    return `${BASE_URL}/uploads/${imageUrl}`;
 };
 
 export default function HomeScreen() {
@@ -36,20 +60,26 @@ export default function HomeScreen() {
     const [newsError, setNewsError] = useState<string | null>(null);
 
     const userId = 1;
-    const baseUrl = Platform.OS === 'android'
-        ? 'http://10.0.2.2:8080'
-        : 'http://192.168.31.18:8080';
+
+    // Базовый URL для API запросов
+    const getBaseUrl = (): string => {
+        // ЗАМЕНИТЕ НА СВОЙ IP АДРЕС!
+        const LOCAL_IP = '192.168.0.104'; // ← ВАЖНО: замените на свой IP!
+        return `http://${LOCAL_IP}:8080`;
+    };
 
     // Загрузка новостей
     const loadNews = async () => {
         try {
             setNewsLoading(true);
             setNewsError(null);
+            console.log('🔄 Загрузка новостей...');
             const news = await fetchLatestNews();
+            console.log(`✅ Загружено ${news.length} новостей`);
             setNewsItems(news);
         } catch (err: any) {
             setNewsError(err.message || 'Ошибка загрузки новостей');
-            console.error('Error loading news:', err);
+            console.error('❌ Ошибка загрузки новостей:', err);
         } finally {
             setNewsLoading(false);
         }
@@ -59,10 +89,12 @@ export default function HomeScreen() {
     const loadServices = async () => {
         try {
             setServicesLoading(true);
+            console.log('🔄 Загрузка услуг...');
             const servicesData = await fetchLatestServices();
+            console.log(`✅ Загружено ${servicesData.length} услуг`);
             setServices(servicesData);
         } catch (err: any) {
-            console.error('Error loading services:', err);
+            console.error('❌ Ошибка загрузки услуг:', err);
         } finally {
             setServicesLoading(false);
         }
@@ -72,7 +104,11 @@ export default function HomeScreen() {
     const fetchCurrentBill = async () => {
         try {
             setBillLoading(true);
-            const response = await fetch(`${baseUrl}/api/finance/current/${userId}`);
+            const baseUrl = getBaseUrl();
+            const url = `${baseUrl}/api/finance/current/${userId}`;
+            console.log(`🌐 Запрос к API: ${url}`);
+
+            const response = await fetch(url);
             const data = await response.json();
 
             if (data?.id) {
@@ -86,7 +122,7 @@ export default function HomeScreen() {
                 setCurrentBill(null);
             }
         } catch (e) {
-            console.error('Ошибка загрузки счета:', e);
+            console.error('❌ Ошибка загрузки счета:', e);
             setCurrentBill(null);
         } finally {
             setBillLoading(false);
@@ -252,16 +288,24 @@ export default function HomeScreen() {
                     </View>
                 ) : (
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        {newsItems.map((news) => (
-                            <NewsCard
-                                key={news.id}
-                                imageUri={getFullImageUrl(news.imageUrl)}
-                                title={news.title}
-                                time={getTimeForDisplay(news)}
-                                category={news.category}
-                                onPress={() => handleNewsPress(news.id)}
-                            />
-                        ))}
+                        {newsItems.map((news) => {
+                            const imageUrl = getFullImageUrl(news.imageUrl);
+                            console.log(`🖼️ Новость ${news.id}:`, {
+                                original: news.imageUrl,
+                                full: imageUrl
+                            });
+
+                            return (
+                                <NewsCard
+                                    key={news.id}
+                                    imageUri={imageUrl}
+                                    title={news.title}
+                                    time={getTimeForDisplay(news)}
+                                    category={news.category}
+                                    onPress={() => handleNewsPress(news.id)}
+                                />
+                            );
+                        })}
                     </ScrollView>
                 )}
             </ThemedView>

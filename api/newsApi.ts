@@ -13,9 +13,10 @@ const getBaseUrl = (): string => {
 };
 
 const API_BASE_URL = `${getBaseUrl()}/api`;
+const BASE_URL = getBaseUrl(); // Для изображений
 
 console.log(`🌐 Платформа: ${Platform.OS}`);
-console.log(`🌐 Базовый URL: ${getBaseUrl()}`);
+console.log(`🌐 Базовый URL: ${BASE_URL}`);
 console.log(`🌐 API URL: ${API_BASE_URL}`);
 
 export type NewsItem = {
@@ -35,13 +36,24 @@ export type NewsItem = {
     createdAt?: string;
 };
 
+// ИСПРАВЛЕНО: функция для получения полного URL изображения
 export const getFullImageUrl = (imageUrl: string): string => {
     if (!imageUrl || imageUrl.trim() === '') {
         return '';
     }
 
-    const fileName = imageUrl.trim();
-    return `${getBaseUrl()}/api/images/${fileName}`;
+    // Если уже полный URL, возвращаем как есть
+    if (imageUrl.startsWith('http')) {
+        return imageUrl;
+    }
+
+    // Если относительный путь начинается с /uploads/
+    if (imageUrl.startsWith('/uploads/')) {
+        return `${BASE_URL}${imageUrl}`;
+    }
+
+    // Если только имя файла, добавляем /uploads/
+    return `${BASE_URL}/uploads/${imageUrl}`;
 };
 
 export const getRelativeTime = (dateString: string): string => {
@@ -87,26 +99,47 @@ const apiFetch = async (endpoint: string) => {
     }
 };
 
+// Вспомогательная функция для обработки URL изображения
+const processImageUrl = (item: any): string => {
+    const imageUrl = item.image_url || item.imageUrl || '';
+
+    if (!imageUrl || imageUrl.trim() === '') {
+        return '';
+    }
+
+    // Если API возвращает уже полный URL
+    if (imageUrl.startsWith('http')) {
+        return imageUrl;
+    }
+
+    // Если API возвращает относительный путь
+    return imageUrl;
+};
+
 export const fetchLatestNews = async (): Promise<NewsItem[]> => {
     try {
         const data = await apiFetch('/news/latest?count=6');
 
-        return data.map((item: any) => ({
-            id: item.id,
-            title: item.title || 'Без заголовка',
-            content: item.content || '',
-            fullContent: item.full_content || item.fullContent || item.content || '',
-            category: item.category || 'Общая',
-            imageUrl: item.image_url || item.imageUrl || '',
-            author: item.author || 'Администрация',
-            updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || new Date().toISOString(),
-            viewCount: item.view_count || item.viewCount || 0,
-            likesCount: item.likes_count || item.likesCount || 0,
-            commentsCount: item.comments_cont || item.commentsCount || 0,
-            timeAgo: item.timeAgo || item.time_ago || getRelativeTime(item.updated_at || item.updatedAt || item.created_at || item.createdAt),
-            createdAt: item.created_at || item.createdAt,
-            isActive: item.isActive !== undefined ? item.isActive : true,
-        }));
+        return data.map((item: any) => {
+            const processedImageUrl = processImageUrl(item);
+
+            return {
+                id: item.id,
+                title: item.title || 'Без заголовка',
+                content: item.content || '',
+                fullContent: item.full_content || item.fullContent || item.content || '',
+                category: item.category || 'Общая',
+                imageUrl: processedImageUrl, // Используем обработанный URL
+                author: item.author || 'Администрация',
+                updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || new Date().toISOString(),
+                viewCount: item.view_count || item.viewCount || 0,
+                likesCount: item.likes_count || item.likesCount || 0,
+                commentsCount: item.comments_count || item.commentsCount || 0,
+                timeAgo: item.timeAgo || item.time_ago || getRelativeTime(item.updated_at || item.updatedAt || item.created_at || item.createdAt),
+                createdAt: item.created_at || item.createdAt,
+                isActive: item.isActive !== undefined ? item.isActive : true,
+            };
+        });
     } catch (error: any) {
         console.error('❌ Ошибка загрузки новостей:', error.message);
         return [];
@@ -118,22 +151,26 @@ export const fetchAllNews = async (): Promise<NewsItem[]> => {
         const response = await apiFetch('/news?page=0&size=20');
         const data = response.content || response || [];
 
-        return data.map((item: any) => ({
-            id: item.id,
-            title: item.title || 'Без заголовка',
-            content: item.content || '',
-            fullContent: item.full_content || item.fullContent || item.content || '',
-            category: item.category || 'Общая',
-            imageUrl: item.image_url || item.imageUrl || '',
-            author: item.author || 'Администрация',
-            updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || new Date().toISOString(),
-            viewCount: item.view_count || item.viewCount || 0,
-            likesCount: item.likes_count || item.likesCount || 0,
-            commentsCount: item.comments_cont || item.commentsCount || 0,
-            timeAgo: item.timeAgo || item.time_ago || getRelativeTime(item.updated_at || item.updatedAt || item.created_at || item.createdAt),
-            createdAt: item.created_at || item.createdAt,
-            isActive: item.isActive !== undefined ? item.isActive : true,
-        }));
+        return data.map((item: any) => {
+            const processedImageUrl = processImageUrl(item);
+
+            return {
+                id: item.id,
+                title: item.title || 'Без заголовка',
+                content: item.content || '',
+                fullContent: item.full_content || item.fullContent || item.content || '',
+                category: item.category || 'Общая',
+                imageUrl: processedImageUrl, // Используем обработанный URL
+                author: item.author || 'Администрация',
+                updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || new Date().toISOString(),
+                viewCount: item.view_count || item.viewCount || 0,
+                likesCount: item.likes_count || item.likesCount || 0,
+                commentsCount: item.comments_count || item.commentsCount || 0,
+                timeAgo: item.timeAgo || item.time_ago || getRelativeTime(item.updated_at || item.updatedAt || item.created_at || item.createdAt),
+                createdAt: item.created_at || item.createdAt,
+                isActive: item.isActive !== undefined ? item.isActive : true,
+            };
+        });
     } catch (error: any) {
         console.error('❌ Ошибка загрузки всех новостей:', error.message);
         return [];
@@ -143,6 +180,7 @@ export const fetchAllNews = async (): Promise<NewsItem[]> => {
 export const fetchNewsById = async (id: number): Promise<NewsItem | null> => {
     try {
         const item = await apiFetch(`/news/${id}`);
+        const processedImageUrl = processImageUrl(item);
 
         return {
             id: item.id,
@@ -150,12 +188,12 @@ export const fetchNewsById = async (id: number): Promise<NewsItem | null> => {
             content: item.content || '',
             fullContent: item.full_content || item.fullContent || item.content || '',
             category: item.category || 'Общая',
-            imageUrl: item.image_url || item.imageUrl || '',
+            imageUrl: processedImageUrl, // Используем обработанный URL
             author: item.author || 'Администрация',
             updatedAt: item.updated_at || item.updatedAt || item.created_at || item.createdAt || new Date().toISOString(),
             viewCount: item.view_count || item.viewCount || 0,
             likesCount: item.likes_count || item.likesCount || 0,
-            commentsCount: item.comments_cont || item.commentsCount || 0,
+            commentsCount: item.comments_count || item.commentsCount || 0,
             timeAgo: item.timeAgo || item.time_ago || getRelativeTime(item.updated_at || item.updatedAt || item.created_at || item.createdAt),
             createdAt: item.created_at || item.createdAt,
             isActive: item.isActive !== undefined ? item.isActive : true,
