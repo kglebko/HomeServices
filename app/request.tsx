@@ -11,17 +11,15 @@ import { TimeSlotsSelector } from '@/components/request/TimeSlotsSelector';
 import { CommentInputWithAttach } from '@/components/request/CommentInputWithAttach';
 import { SystemAlert } from '@/components/SystemAlert';
 
-// Функция для получения текста диапазона недели
+
 const getWeekRangeText = () => {
     const today = new Date();
     const currentDay = today.getDay();
 
-    // Находим понедельник текущей недели
     const monday = new Date(today);
     const daysToMonday = currentDay === 0 ? 1 : (currentDay === 1 ? 0 : 1 - currentDay);
     monday.setDate(today.getDate() + daysToMonday);
 
-    // Находим пятницу текущей недели (только рабочие дни)
     const friday = new Date(monday);
     friday.setDate(monday.getDate() + 4);
 
@@ -54,16 +52,13 @@ export default function ServiceRequestScreen() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Состояние для алерта
     const [showAlert, setShowAlert] = useState(false);
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
 
-    // Получаем текст диапазона недели
     const weekRangeText = useMemo(() => getWeekRangeText(), []);
 
-    // Устанавливаем заголовок при монтировании
-    useEffect(() => {
+        useEffect(() => {
         navigation.setOptions({
             title: 'Оформление заявки',
             headerStyle: {
@@ -136,78 +131,72 @@ export default function ServiceRequestScreen() {
         try {
             // Преобразуем день недели в дату
             const convertDayToDate = (dayOfWeek: string) => {
-                const daysMap: Record<string, number> = {
+                const daysMap = {
                     'Пн': 1, 'Вт': 2, 'Ср': 3, 'Чт': 4, 'Пт': 5
                 };
 
                 const today = new Date();
-                const currentDay = today.getDay();
+                const currentDay = today.getDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+
                 let targetDay = daysMap[dayOfWeek] || 1;
 
-                // Находим ближайший день
+                // Рассчет дней до целевого дня
                 let daysToAdd = 0;
                 if (currentDay === 0) {
-                    daysToAdd = targetDay;
-                } else if (currentDay <= targetDay) {
-                    daysToAdd = targetDay - currentDay;
+                    daysToAdd = targetDay; // Вс → Пн=1, Вт=2 и т.д.
+                } else if (currentDay === targetDay) {
+                    daysToAdd = 7; // Перенос на след. неделю
+                } else if (currentDay < targetDay) {
+                    daysToAdd = targetDay - currentDay; // На этой неделе
                 } else {
-                    daysToAdd = 7 - currentDay + targetDay;
+                    daysToAdd = (7 - currentDay) + targetDay; // На след. неделе
                 }
-
-                if (daysToAdd === 0) daysToAdd = 7;
 
                 const targetDate = new Date(today);
                 targetDate.setDate(today.getDate() + daysToAdd);
                 return targetDate;
             };
 
-            // Извлекаем только время начала из выбранного значения
-            // Если time содержит диапазон (например "10:00 – 12:00"), берем первую часть
-            const extractStartTime = (timeValue: string) => {
-                if (timeValue.includes('–')) {
-                    return timeValue.split('–')[0].trim();
-                } else if (timeValue.includes('-')) {
-                    return timeValue.split('-')[0].trim();
-                }
-                return timeValue;
-            };
+            // Исправление №1: Функция для добавления ведущего нуля к времени
+            const fixTimeFormat = (timeStr: string) => {
+                if (!timeStr) return "00:00:00";
 
-            // Получаем время окончания:
-            // 1. Из параметров endTime, если передано
-            // 2. Из выбранного времени, если это диапазон
-            // 3. Добавляем 2 часа к начальному времени
-            const getEndTime = (startTime: string) => {
-                // Если передано время окончания из параметров
-                if (paramEndTime) {
-                    return paramEndTime;
-                }
+                // Убираем диапазон (если "10:00 – 12:00" → "10:00")
+                let cleanTime = timeStr.split('–')[0]?.trim() || timeStr;
 
-                // Если выбранный time содержит диапазон
-                if (time && time.includes('–')) {
-                    const parts = time.split('–');
-                    return parts[1]?.trim() || '12:00';
-                } else if (time && time.includes('-')) {
-                    const parts = time.split('-');
-                    return parts[1]?.trim() || '12:00';
-                }
+                // Разделяем часы и минуты
+                const parts = cleanTime.split(':');
+                if (parts.length < 2) return "00:00:00";
 
-                // По умолчанию добавляем 2 часа к начальному времени
-                const [hours, minutes] = startTime.split(':').map(Number);
-                let endHours = hours + 2;
-                if (endHours >= 24) endHours -= 24;
-                return `${endHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                // Добавляем ведущий ноль к часам если нужно
+                let hours = parts[0];
+                if (hours.length === 1) hours = '0' + hours; // "9" → "09"
+
+                const minutes = parts[1] || '00';
+
+                return `${hours}:${minutes}:00`; // Добавляем секунды
             };
 
             const selectedDate = convertDayToDate(day!);
-            const startTimeValue = extractStartTime(time!);
-            const endTimeValue = getEndTime(startTimeValue);
+
+            // Исправление №2: Используем функцию fixTimeFormat
+            const selectedStartTime = fixTimeFormat(time!);
+
+            // Рассчитываем время окончания (добавляем 2 часа)
+            const startParts = selectedStartTime.split(':');
+            const startHours = parseInt(startParts[0]);
+            let endHours = startHours + 2;
+            if (endHours >= 24) endHours -= 24;
+
+            // Форматируем время окончания с ведущим нулём
+            const selectedEndTime = endHours.toString().padStart(2, '0') + ':' + startParts[1] + ':00';
 
             // Данные для отправки
             const requestData = {
                 serviceId: parseInt(serviceId || '2'),
                 selectedDate: selectedDate.toISOString().split('T')[0],
-                selectedStartTime: startTimeValue + ':00',
-                selectedEndTime: endTimeValue + ':00',
+                selectedStartTime: selectedStartTime, // Теперь "09:00:00" а не "9:00:00"
+                selectedEndTime: selectedEndTime,
                 comment: comment,
                 userId: 1,
                 estimatedPrice: parseFloat(price || '20.00')
@@ -215,12 +204,10 @@ export default function ServiceRequestScreen() {
 
             console.log('Отправка данных:', requestData);
 
-            // URL бэкенда
             const baseUrl = Platform.OS === 'android'
                 ? 'http://10.0.2.2:8080'
-                : 'http://192.168.31.18:8080'; // Ваш IP
+                : 'http://192.168.31.18:8080';
 
-            // Отправляем запрос
             const response = await fetch(`${baseUrl}/api/requests`, {
                 method: 'POST',
                 headers: {
@@ -238,7 +225,6 @@ export default function ServiceRequestScreen() {
             const result = await response.json();
             console.log('Заявка создана:', result);
 
-            // Переход на экран успеха
             router.push({
                 pathname: '/request-success',
                 params: { requestId: result.id.toString() }
@@ -247,20 +233,14 @@ export default function ServiceRequestScreen() {
         } catch (error: any) {
             console.error('Ошибка:', error);
 
-            let errorMessage = 'Не удалось создать заявку. ';
-            if (error.message.includes('Network request failed')) {
-                errorMessage += 'Проблема с сетью. Проверьте:\n1. Запущен ли бэкенд\n2. IP адрес сервера';
-            } else {
-                errorMessage += error.message;
-            }
-
             setAlertTitle('Ошибка создания заявки');
-            setAlertMessage(errorMessage);
+            setAlertMessage(error.message || 'Не удалось создать заявку');
             setShowAlert(true);
         } finally {
             setIsSubmitting(false);
         }
     };
+
 
     return (
         <ScreenContainer scrollable>

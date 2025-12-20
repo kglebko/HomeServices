@@ -34,7 +34,7 @@ export default function LoginScreen() {
         Keyboard.dismiss();
     };
 
-    // Форматирование номера телефона для Беларуси (только для режима телефона)
+    // Форматирование номера телефона
     const formatPhoneNumber = (text: string) => {
         const cleaned = text.replace(/\D/g, '');
 
@@ -68,12 +68,12 @@ export default function LoginScreen() {
 
     // Обработка ввода телефона/email
     const handleContactChange = (text: string) => {
-        // Если в режиме телефона и начинается с цифры или +, форматируем как телефон
+
         if (!isEmail && /^[\d\+]/.test(text)) {
             const formatted = formatPhoneNumber(text);
             setContact(formatted);
         } else {
-            // Иначе просто устанавливаем текст
+            
             setContact(text);
         }
     };
