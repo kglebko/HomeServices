@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+// app/index.tsx
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedText } from '@/components/themed-text';
@@ -8,27 +9,77 @@ import { ThemedCard } from '@/components/themed-card';
 import { router } from 'expo-router';
 import { NewsCard } from '@/components/news/NewsCard';
 import { ServiceTile } from '@/components/services/ServiceTile';
+import { fetchLatestNews, NewsItem, getFullImageUrl, getRelativeTime } from '@/api/newsApi';
+import { fetchLatestServices, ServiceItem } from '@/api/servicesApi';
 
 export default function HomeScreen() {
-    const NEWS_ITEMS = [
-        {
-            id: 1,
-            image: require('../../assets/images/news1.png'),
-            title: "Каждый подъезд дома был украшен к Новому году!",
-            time: "Вчера 19:00",
-            category: "Праздники",
-        },
-        {
-            id: 2,
-            image: require('../../assets/images/news2.png'),
-            title: "Обновление системы оплаты",
-            time: "2 дня назад",
-            category: "Уведомление",
-        },
-    ];
+    const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+    const [services, setServices] = useState<ServiceItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [servicesLoading, setServicesLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        loadNews();
+        loadServices();
+    }, []);
+
+    const loadNews = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const news = await fetchLatestNews();
+            setNewsItems(news);
+        } catch (err: any) {
+            setError(err.message || 'Ошибка загрузки новостей');
+            console.error('Error loading news:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadServices = async () => {
+        try {
+            setServicesLoading(true);
+            const servicesData = await fetchLatestServices();
+            setServices(servicesData);
+        } catch (err: any) {
+            console.error('Error loading services:', err);
+        } finally {
+            setServicesLoading(false);
+        }
+    };
 
     const handleNewsPress = (newsId: number) => {
-        router.push(`/news/${newsId}` as any);
+        router.push(`/news/${newsId}`);
+    };
+
+    const handleServicePress = (service: ServiceItem) => {
+        router.push({
+            pathname: '/request',
+            params: {
+                serviceId: service.id.toString(),
+                title: service.name,
+                price: service.price.toString(),
+            },
+        });
+    };
+
+    const getTimeForDisplay = (news: NewsItem): string => {
+        return news.timeAgo || getRelativeTime(news.updatedAt);
+    };
+
+    const getServiceIcon = (serviceName: string): any => {
+        const iconMap: Record<string, any> = {
+            'Сантехник': require('../../assets/icons/santehnik.png'),
+            'Электрик': require('../../assets/icons/electric.png'),
+            'Слесарь': require('../../assets/icons/slesar.png'),
+            'Клининг': require('../../assets/icons/cleaning.png'),
+            'Грузчик': require('../../assets/icons/gruzchik.png'),
+            'Мастер': require('../../assets/icons/master.png'),
+        };
+
+        return iconMap[serviceName] || require('../../assets/icons/master.png');
     };
 
     return (
@@ -72,23 +123,43 @@ export default function HomeScreen() {
                     >
                         Новости
                     </ThemedText>
-                    <TouchableOpacity onPress={() => router.push('/news' as any)}>
+                    <TouchableOpacity onPress={() => router.push('/news')}>
                         <ThemedText type="littleLabel">Все новости</ThemedText>
                     </TouchableOpacity>
                 </ThemedView>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {NEWS_ITEMS.map((news) => (
-                        <NewsCard
-                            key={news.id}
-                            image={news.image}
-                            title={news.title}
-                            time={news.time}
-                            category={news.category}
-                            onPress={() => handleNewsPress(news.id)}
+                {loading ? (
+                    <View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="#ffffff" />
+                        <ThemedText style={{ marginTop: 12, color: '#8A8A8A' }}>Загрузка новостей...</ThemedText>
+                    </View>
+                ) : error ? (
+                    <View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+                        <ThemedText style={{ color: '#ff6b6b' }}>{error}</ThemedText>
+                        <ThemedButton
+                            title="Повторить"
+                            onPress={loadNews}
+                            style={{ marginTop: 10, paddingHorizontal: 20 }}
                         />
-                    ))}
-                </ScrollView>
+                    </View>
+                ) : newsItems.length === 0 ? (
+                    <View style={{ height: 250, justifyContent: 'center', alignItems: 'center' }}>
+                        <ThemedText style={{ color: '#8A8A8A' }}>Новостей пока нет</ThemedText>
+                    </View>
+                ) : (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {newsItems.map((news) => (
+                            <NewsCard
+                                key={news.id}
+                                imageUri={getFullImageUrl(news.imageUrl)}
+                                title={news.title}
+                                time={getTimeForDisplay(news)}
+                                category={news.category}
+                                onPress={() => handleNewsPress(news.id)}
+                            />
+                        ))}
+                    </ScrollView>
+                )}
             </ThemedView>
 
             {/* ---- УСЛУГИ ---- */}
@@ -103,65 +174,60 @@ export default function HomeScreen() {
                     >
                         Услуги
                     </ThemedText>
-                    <TouchableOpacity onPress={() => router.push('/services' as any)}>
+                    <TouchableOpacity onPress={() => router.push('/services')}>
                         <ThemedText type="littleLabel">Все услуги</ThemedText>
                     </TouchableOpacity>
                 </ThemedView>
 
-                <ThemedView
-                    withBackground={false}
-                    style={{
+                {servicesLoading ? (
+                    <View style={{
                         flexDirection: 'row',
                         flexWrap: 'wrap',
                         justifyContent: 'space-between',
-                        marginTop: 0,
-                    }}
-                >
-                    <ServiceTile
-                        icon={require('../../assets/icons/santehnik.png')}
-                        title="Сантехник"
-                        time="10:00–19:00"
-                        price="от 20 руб."
-                    />
-                    <ServiceTile
-                        icon={require('../../assets/icons/electric.png')}
-                        title="Электрик"
-                        time="10:00–20:00"
-                        price="от 20 руб."
-                        onPress={() =>
-                            router.push({
-                                pathname: '/request',
-                                params: {
-                                    title: 'Электрик',
-                                    icon: 'electric',
-                                },
-                            })
-                        }
-                    />
-                    <ServiceTile
-                        icon={require('../../assets/icons/slesar.png')}
-                        title="Слесарь"
-                        time="10:00–20:00"
-                        price="от 30 руб."
-                    />
-                    <ServiceTile
-                        icon={require('../../assets/icons/cleaning.png')}
-                        title="Клининг"
-                        time="10:00–20:00"
-                        price="от 50 руб."
-                    />
-                    <ServiceTile
-                        icon={require('../../assets/icons/gruzchik.png')}
-                        title="Грузчик"
-                        time="10:00–19:00"
-                        price="от 40 руб."
-                    />
-                    <ServiceTile
-                        icon={require('../../assets/icons/master.png')}
-                        title="Мастер"
-                        price="от 100 руб."
-                    />
-                </ThemedView>
+                        minHeight: 200
+                    }}>
+                        {[1, 2, 3, 4, 5, 6].map(i => (
+                            <View key={i} style={{
+                                width: '48%',
+                                marginBottom: 12,
+                                padding: 16,
+                                backgroundColor: '#2A2A2A',
+                                borderRadius: 12,
+                                alignItems: 'center'
+                            }}>
+                                <ActivityIndicator size="small" color="#ffffff" />
+                                <ThemedText style={{
+                                    marginTop: 8,
+                                    fontSize: 12,
+                                    color: '#8A8A8A'
+                                }}>
+                                    Загрузка...
+                                </ThemedText>
+                            </View>
+                        ))}
+                    </View>
+                ) : (
+                    <ThemedView
+                        withBackground={false}
+                        style={{
+                            flexDirection: 'row',
+                            flexWrap: 'wrap',
+                            justifyContent: 'space-between',
+                            marginTop: 0,
+                        }}
+                    >
+                        {services.map((service) => (
+                            <ServiceTile
+                                key={service.id}
+                                icon={getServiceIcon(service.name)}
+                                title={service.name}
+                                time={service.workHours || '10:00-20:00'}
+                                price={`от ${service.price} руб.`}
+                                onPress={() => handleServicePress(service)}
+                            />
+                        ))}
+                    </ThemedView>
+                )}
             </ThemedView>
         </ScreenContainer>
     );

@@ -1,10 +1,11 @@
+// components/news/NewsCard.tsx
 import React from 'react';
 import { Image, TouchableOpacity, TouchableOpacityProps, View } from 'react-native';
 import { ThemedCard } from '@/components/themed-card';
 import { ThemedText } from '@/components/themed-text';
 
 type NewsCardProps = {
-    image: any;
+    imageUri: string; // Изменили на URI
     title: string;
     time: string;
     category?: string;
@@ -12,7 +13,7 @@ type NewsCardProps = {
 } & TouchableOpacityProps;
 
 export function NewsCard({
-                             image,
+                             imageUri,
                              title,
                              time,
                              category,
@@ -28,13 +29,14 @@ export function NewsCard({
             height: 250,
         }}>
             <Image
-                source={image}
+                source={{ uri: imageUri }} // Используем uri
                 style={{
                     width: '100%',
                     height: 140,
                     borderTopLeftRadius: 10,
                     borderTopRightRadius: 10,
                 }}
+                resizeMode="cover"
             />
 
             <View style={{
@@ -42,18 +44,18 @@ export function NewsCard({
                 paddingTop: 8,
                 flex: 1,
             }}>
-                {/* Категория с более темным фоном и скруглением */}
+                {/* Категория */}
                 {category && (
                     <View
                         style={{
-                            backgroundColor: '#333333', // Более темный цвет
+                            backgroundColor: '#333333',
                             alignSelf: 'flex-start',
                             paddingHorizontal: 12,
                             paddingVertical: 4,
-                            borderRadius: 16, // Больше скругление
+                            borderRadius: 16,
                             marginBottom: 8,
                             borderWidth: 1,
-                            borderColor: '#2A2A2A', // Граница для контраста
+                            borderColor: '#2A2A2A',
                         }}
                     >
                         <ThemedText
@@ -100,7 +102,6 @@ export function NewsCard({
         </ThemedCard>
     );
 
-    // Если есть обработчик нажатия, оборачиваем в TouchableOpacity
     if (onPress) {
         return (
             <TouchableOpacity
