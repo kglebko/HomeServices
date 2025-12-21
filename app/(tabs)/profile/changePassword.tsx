@@ -1,18 +1,19 @@
 import { ChangePasswordScreenStyles as styles } from "@/components/ChangePasswordScreenStyles";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 export default function ChangePasswordScreen() {
@@ -23,6 +24,7 @@ export default function ChangePasswordScreen() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Валидация пароля
   const validatePassword = (password: string) => {
@@ -39,7 +41,7 @@ export default function ChangePasswordScreen() {
   };
 
   // Смена пароля
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     Keyboard.dismiss();
 
     // Проверка на пустые поля
@@ -67,24 +69,22 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    // Здесь будет API-запрос на смену пароля
-    console.log("Смена пароля:", {
-      oldPassword,
-      newPassword,
-      confirmPassword,
-    });
+    setIsLoading(true);
 
-    // Имитация успешной смены пароля
-    Alert.alert(
-      "Успешно!",
-      "Пароль успешно изменен",
-      [
-        {
-          text: "OK",
-          onPress: () => router.back(),
-        },
-      ]
-    );
+    try {
+      const response = await apiService.changePassword(oldPassword, newPassword);
+      
+      if (response.success) {
+        router.back();
+        
+      } else {
+        Alert.alert("Ошибка", response.message || "Не удалось изменить пароль");
+      }
+    } catch (error: any) {
+      Alert.alert("Ошибка", error.message || "Не удалось изменить пароль. Проверьте правильность старого пароля.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -216,12 +216,14 @@ export default function ChangePasswordScreen() {
           <TouchableOpacity
             style={[
               styles.changeButton,
-              (!oldPassword || !newPassword || !confirmPassword) && styles.changeButtonDisabled
+              ((!oldPassword || !newPassword || !confirmPassword) || isLoading) && styles.changeButtonDisabled
             ]}
             onPress={handleChangePassword}
-            disabled={!oldPassword || !newPassword || !confirmPassword}
+            disabled={!oldPassword || !newPassword || !confirmPassword || isLoading}
           >
-            <Text style={styles.changeButtonText}>Сменить пароль</Text>
+            <Text style={styles.changeButtonText}>
+              {isLoading ? "Изменение..." : "Сменить пароль"}
+            </Text>
           </TouchableOpacity>
 
           {/* Информация о безопасности */}

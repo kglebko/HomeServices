@@ -1,24 +1,25 @@
 // screens/CompleteRegistrationScreen.tsx
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-  Linking,
-} from 'react-native';
-import { ScreenContainer } from '@/components/ScreenContainer';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Registration as styles } from "@/components/Registration";
+import { ScreenContainer } from '@/components/ScreenContainer';
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Linking,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from 'react-native';
 
 export default function CompleteRegistrationScreen() {
   const router = useRouter();
@@ -31,18 +32,36 @@ export default function CompleteRegistrationScreen() {
   const [rememberMe, setRememberMe] = useState(true);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [contact, setContact] = useState<string>("");
   
   // Рефы для управления фокусом
   const passwordInputRef = useRef<TextInput>(null);
   const confirmPasswordInputRef = useRef<TextInput>(null);
 
-  // Данные жильца (из QR-кода или предыдущего экрана)
-   const residentData = {
-    fullName: 'Глебко Константин Романович',
+  // Данные из QR-кода (в реальном приложении будут приходить с предыдущего экрана)
+  const residentData = {
+    first_name: 'Константин',
+    last_name: 'Глебко',
+    patronymic: 'Романович',
     address: 'ул. Пономаренко 54-54',
     accountNumber: '2093350054',
-    residentsCount: '4'
+    residents_count: 4
   };
+
+  // Загружаем контакт при монтировании компонента
+  useEffect(() => {
+    const loadContact = async () => {
+      const savedContact = await storage.getRegistrationContact();
+      if (savedContact) {
+        setContact(savedContact);
+      } else {
+        Alert.alert("Ошибка", "Контакт не найден. Пожалуйста, начните регистрацию заново.", [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      }
+    };
+    loadContact();
+  }, []);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -84,7 +103,7 @@ const validateForm = () => {
   return null;
 };
   // Завершение регистрации
-    const handleCompleteRegistration = async () => {
+  const handleCompleteRegistration = async () => {
     Keyboard.dismiss();
     
     const validationError = validateForm();
@@ -93,42 +112,50 @@ const validateForm = () => {
         return;
     }
     
+    if (!contact) {
+        Alert.alert("Ошибка", "Контакт не найден. Пожалуйста, начните регистрацию заново.");
+        return;
+    }
+    
     setIsLoading(true);
     
     try {
-        // Здесь будет API-запрос для завершения регистрации
-        console.log("Завершение регистрации:", {
-        ...residentData,
-        password,
-        rememberMe,
-        agreeTerms
+        // Выполняем регистрацию через API
+        const response = await apiService.register({
+            contact,
+            password,
+            fullName: `${residentData.last_name} ${residentData.first_name} ${residentData.patronymic}`,
+            address: residentData.address,
+            accountNumber: residentData.accountNumber,
+            residentsCount: residentData.residents_count
         });
         
-        // Имитация запроса
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (response.success && response.data) {
+            // Сохраняем токен и данные пользователя
+            await storage.saveToken(response.data.token);
+            await storage.saveUser(response.data.user);
+            await storage.clearRegistrationContact();
+            
+            // Сначала переходим на главную
+            router.replace("/(tabs)");
+            
+            // Затем показываем уведомление (после небольшой задержки)
+            setTimeout(() => {
+                Alert.alert(
+                    "Регистрация завершена!",
+                    "Ваш аккаунт успешно создан"
+                );
+            }, 500);
+        } else {
+            Alert.alert("Ошибка", "Не удалось завершить регистрацию. Попробуйте еще раз.");
+        }
         
-        // Успешная регистрация
-        Alert.alert(
-        "Регистрация завершена!",
-        "Ваш аккаунт успешно создан",
-        [
-            {
-            text: "Войти в аккаунт",
-            onPress: () => {
-                // Здесь будет переход на главный экран или экран входа
-             router.replace("/(tabs)");
-                
-            }
-            }
-        ]
-        );
-        
-    } catch (error) {
-        Alert.alert("Ошибка", "Не удалось завершить регистрацию. Попробуйте еще раз.");
+    } catch (error: any) {
+        Alert.alert("Ошибка", error.message || "Не удалось завершить регистрацию. Попробуйте еще раз.");
     } finally {
         setIsLoading(false);
     }
-    };
+  };
 
   // Переход к соглашению
   const openUserAgreement = () => {
@@ -192,13 +219,37 @@ const validateForm = () => {
 
               {/* Карточка с данными жильца */}
             <View style={styles.dataCard2}>
-                {/* ФИО */}
-                <View style={styles.dataRow}>
-                <View style={styles.dataLabelContainer}>
-                    <Ionicons name="person" size={16} color="#D64105" />
-                    <Text style={styles.dataLabel}>ФИО:</Text>
+                {/* Имя - отдельное поле */}
+                <View style={styles.nameField}>
+                  <View style={styles.nameFieldRow}>
+                    <View style={styles.dataLabelContainer}>
+                      <Ionicons name="person" size={16} color="#D64105" />
+                      <Text style={styles.dataLabel}>Имя:</Text>
+                    </View>
+                    <Text style={styles.dataValue}>{residentData.first_name}</Text>
+                  </View>
                 </View>
-                <Text style={styles.dataValue}>{residentData.fullName}</Text>
+
+                {/* Фамилия - отдельное поле */}
+                <View style={styles.nameField}>
+                  <View style={styles.nameFieldRow}>
+                    <View style={styles.dataLabelContainer}>
+                      <Ionicons name="person" size={16} color="#D64105" />
+                      <Text style={styles.dataLabel}>Фамилия:</Text>
+                    </View>
+                    <Text style={styles.dataValue}>{residentData.last_name}</Text>
+                  </View>
+                </View>
+
+                {/* Отчество - отдельное поле */}
+                <View style={styles.nameField}>
+                  <View style={styles.nameFieldRow}>
+                    <View style={styles.dataLabelContainer}>
+                      <Ionicons name="person" size={16} color="#D64105" />
+                      <Text style={styles.dataLabel}>Отчество:</Text>
+                    </View>
+                    <Text style={styles.dataValue}>{residentData.patronymic}</Text>
+                  </View>
                 </View>
 
                 {/* Адрес */}
@@ -225,7 +276,7 @@ const validateForm = () => {
                     <Ionicons name="people" size={16} color="#D64105" />
                     <Text style={styles.dataLabel}>Кол-во проживающих:</Text>
                 </View>
-                <Text style={styles.dataValue}>{residentData.residentsCount}</Text>
+                <Text style={styles.dataValue}>{residentData.residents_count}</Text>
                 </View>
             </View>
 

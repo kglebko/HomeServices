@@ -1,22 +1,23 @@
 // screens/RegistrationScreen.tsx
-import React, { useState, useRef } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  TextInput,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableWithoutFeedback,
-  Keyboard,
-} from 'react-native';
+import { Registration as styles } from "@/components/Registration";
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { apiService } from '@/services/api';
+import { storage } from '@/services/storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { Registration as styles } from "@/components/Registration";
+import { useRef, useState } from 'react';
+import {
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
+} from 'react-native';
 
 export default function RegistrationScreen() {
   const router = useRouter();
@@ -83,21 +84,31 @@ export default function RegistrationScreen() {
     setIsLoading(true);
     
     try {
-      // Имитация отправки кода
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Сохраняем контакт для дальнейшего использования
+      await storage.saveRegistrationContact(contact);
       
-      Alert.alert(
-        "Код отправлен",
-        `Код подтверждения отправлен на ${isEmail ? 'email' : 'телефон'}: ${contact}`,
-        [
-          {
-            text: "OK",
-            onPress: () => {router.push("/login/enterCode")}
-          }
-        ]
-      );
-    } catch (error) {
-      Alert.alert("Ошибка", "Не удалось отправить код. Попробуйте еще раз.");
+      // Отправляем код через API
+      const response = await apiService.sendCode(contact);
+      
+      console.log('Send code response:', response);
+      
+      if (response.success) {
+        // Успешно - переходим на экран ввода кода
+        router.push("/login/enterCode");
+        
+        // Показываем информацию о коде (только после перехода)
+        setTimeout(() => {
+          Alert.alert(
+            "Код отправлен",
+            `Код подтверждения отправлен на ${isEmail ? 'email' : 'телефон'}: ${contact}\n\nПримечание: В режиме разработки код будет показан в консоли сервера.`
+          );
+        }, 500);
+      } else {
+        Alert.alert("Ошибка", response.message || "Не удалось отправить код");
+      }
+    } catch (error: any) {
+      console.error('Send code error:', error);
+      Alert.alert("Ошибка", error.message || "Не удалось отправить код. Проверьте подключение к серверу.");
     } finally {
       setIsLoading(false);
     }

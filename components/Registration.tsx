@@ -61,6 +61,19 @@ export const Registration = StyleSheet.create({
     textAlign: "left",
     lineHeight: 22,
   },
+  nameField: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#3A3A3A",
+  },
+  nameFieldRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
   separator: {
     height: 1,
     backgroundColor: "#3A3A3A",

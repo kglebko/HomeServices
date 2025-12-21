@@ -1,18 +1,20 @@
 import { LoginAccount as styles } from "@/components/LoginAccount";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from "react-native";
 
 export default function LoginScreen() {
@@ -107,35 +109,23 @@ export default function LoginScreen() {
     setIsLoading(true);
     
     try {
-      // Здесь будет API-запрос для входа
-      console.log("Вход в аккаунт:", {
-        contact,
-        isEmail,
-        password,
-        rememberMe,
-      });
+      // Выполняем запрос на логин через API
+      const response = await apiService.login(contact, password);
       
-      // Имитация запроса
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      if (response.success && response.data) {
+        // Сохраняем токен и данные пользователя
+        await storage.saveToken(response.data.token);
+        await storage.saveUser(response.data.user);
+        
+        // Успешный вход - переходим на главную
+        router.replace("/(tabs)");
+        Alert.alert("Успешно", "Вы вошли в аккаунт");
+      } else {
+        Alert.alert("Ошибка", "Неверный логин или пароль");
+      }
       
-      // Сохраняем данные если выбрано "Запомнить вход"
-      //if (rememberMe) {
-        //await AsyncStorage.setItem('userToken', 'ваш_токен_от_API');
-        //await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      //}
-      
-      // Успешный вход - переходим на главную
-      Alert.alert("Успешно", "Вы вошли в аккаунт", [
-        {
-          text: "OK",
-          onPress: () => {
-            router.replace("/(tabs)");
-          },
-        },
-      ]);
-      
-    } catch (error) {
-      Alert.alert("Ошибка", "Неверный логин или пароль");
+    } catch (error: any) {
+      Alert.alert("Ошибка", error.message || "Неверный логин или пароль");
     } finally {
       setIsLoading(false);
     }

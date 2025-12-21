@@ -1,16 +1,30 @@
 import { CodeScreenStyles as styles } from "@/components/CodeScreenStyles";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Keyboard, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function CodeVerificationScreen() {
   const router = useRouter();
   const [code, setCode] = useState(["", "", "", ""]);
-  const [timer, setTimer] = useState(5);
+  const [timer, setTimer] = useState(60);
   const [isResendEnabled, setIsResendEnabled] = useState(false);
-  const inputsRef = useRef<Array<TextInput | null>>([]);
+  const [contact, setContact] = useState<string>("");
+  const inputsRef = useRef<(TextInput | null)[]>([]);
+
+  // Загружаем контакт при монтировании компонента
+  useEffect(() => {
+    const loadContact = async () => {
+      const savedContact = await storage.getRegistrationContact();
+      if (savedContact) {
+        setContact(savedContact);
+      }
+    };
+    loadContact();
+  }, []);
 
   
   // Таймер для повторной отправки кода
@@ -63,31 +77,43 @@ export default function CodeVerificationScreen() {
   };
 
   // Повторная отправка кода
-  const handleResendCode = () => {
-    if (isResendEnabled) {
-      // Здесь логика повторной отправки кода
-      Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
-      setTimer(60);
-      setIsResendEnabled(false);
-      setCode(["", "", "", ""]);
-      inputsRef.current[0]?.focus();
+  const handleResendCode = async () => {
+    if (isResendEnabled && contact) {
+      try {
+        await apiService.sendCode(contact);
+        Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
+        setTimer(60);
+        setIsResendEnabled(false);
+        setCode(["", "", "", ""]);
+        inputsRef.current[0]?.focus();
+      } catch (error: any) {
+        Alert.alert("Ошибка", error.message || "Не удалось отправить код. Попробуйте еще раз.");
+      }
     }
   };
 
   // Подтверждение кода
-  const handleVerifyCode = (verificationCode: string) => {
+  const handleVerifyCode = async (verificationCode: string) => {
     Keyboard.dismiss();
     
-    // Здесь логика проверки кода
-    console.log("Код для проверки:", verificationCode);
+    if (!contact) {
+      Alert.alert("Ошибка", "Контакт не найден. Пожалуйста, начните регистрацию заново.");
+      return;
+    }
     
-    // Пример успешной проверки
-    if (verificationCode === "1234") { // Замените на реальную проверку
-      Alert.alert("Успешно!", "Создайте пароль");
-      router.push("/login/complete"); // Или router.push("/next-screen")
-    } else {
-      Alert.alert("Ошибка!", "Неверный код подтверждения");
-      // Очистка полей при ошибке
+    try {
+      const response = await apiService.verifyCode(contact, verificationCode);
+      
+      if (response.success && response.data) {
+        // Код подтвержден, переходим к созданию пароля
+        router.push("/login/complete");
+      } else {
+        Alert.alert("Ошибка!", "Неверный код подтверждения");
+        setCode(["", "", "", ""]);
+        inputsRef.current[0]?.focus();
+      }
+    } catch (error: any) {
+      Alert.alert("Ошибка!", error.message || "Неверный код подтверждения");
       setCode(["", "", "", ""]);
       inputsRef.current[0]?.focus();
     }
