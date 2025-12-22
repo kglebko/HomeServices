@@ -5,7 +5,7 @@ import { ThemedCard } from '@/components/themed-card';
 import { ThemedText } from '@/components/themed-text';
 
 type NewsCardProps = {
-    imageUri: string; // Изменили на URI
+    imageUri: string;
     title: string;
     time: string;
     category?: string;
@@ -29,7 +29,7 @@ export function NewsCard({
             height: 250,
         }}>
             <Image
-                source={{ uri: imageUri }} // Используем uri
+                source={{ uri: imageUri }}
                 style={{
                     width: '100%',
                     height: 140,
@@ -44,7 +44,6 @@ export function NewsCard({
                 paddingTop: 8,
                 flex: 1,
             }}>
-                {/* Категория */}
                 {category && (
                     <View
                         style={{
@@ -71,7 +70,6 @@ export function NewsCard({
                     </View>
                 )}
 
-                {/* Заголовок */}
                 <ThemedText
                     style={{
                         fontFamily: 'Actay',
@@ -86,18 +84,23 @@ export function NewsCard({
                     {title}
                 </ThemedText>
 
-                {/* Время */}
-                <ThemedText
-                    type="littleLabel"
-                    style={{
-                        fontSize: 12,
-                        color: '#8A8A8A',
-                        marginTop: 6,
-                        fontFamily: 'Actay',
-                    }}
-                >
-                    {time}
-                </ThemedText>
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    marginTop: 6,
+                }}>
+                    <ThemedText
+                        type="littleLabel"
+                        style={{
+                            fontSize: 12,
+                            color: '#8A8A8A',
+                            fontFamily: 'Actay',
+                        }}
+                    >
+                        {time}
+                    </ThemedText>
+                </View>
             </View>
         </ThemedCard>
     );

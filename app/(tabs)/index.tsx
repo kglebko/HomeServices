@@ -10,7 +10,7 @@ import { ThemedCard } from '@/components/themed-card';
 import { router, useFocusEffect } from 'expo-router';
 import { NewsCard } from '@/components/news/NewsCard';
 import { ServiceTile } from '@/components/services/ServiceTile';
-import { fetchLatestNews, NewsItem, getRelativeTime } from '@/api/newsApi';
+import { fetchLatestNews, NewsItem, getRelativeTime, getFullImageUrl } from '@/api/newsApi';
 import { fetchLatestServices, ServiceItem } from '@/api/servicesApi';
 import { useThemeColor } from '@/hooks/use-theme-color';
 
@@ -19,30 +19,6 @@ type CurrentBill = {
     accruedAmount: number;
     status: 'Оплачено' | 'Не оплачено';
     period?: string;
-};
-
-// Функция для получения полного URL изображения
-const getFullImageUrl = (imageUrl: string): string => {
-    if (!imageUrl || imageUrl.trim() === '') {
-        return '';
-    }
-
-    // Если уже полный URL
-    if (imageUrl.startsWith('http')) {
-        return imageUrl;
-    }
-
-    // ЗАМЕНИТЕ НА СВОЙ IP АДРЕС!
-    const LOCAL_IP = '192.168.0.104'; // ← ВАЖНО: замените на свой IP!
-    const BASE_URL = `http://${LOCAL_IP}:8080`;
-
-    // Если относительный путь начинается с /uploads/
-    if (imageUrl.startsWith('/uploads/')) {
-        return `${BASE_URL}${imageUrl}`;
-    }
-
-    // Если только имя файла, добавляем /uploads/
-    return `${BASE_URL}/uploads/${imageUrl}`;
 };
 
 export default function HomeScreen() {
@@ -61,21 +37,22 @@ export default function HomeScreen() {
 
     const userId = 1;
 
-    // Базовый URL для API запросов
-    const getBaseUrl = (): string => {
-        // ЗАМЕНИТЕ НА СВОЙ IP АДРЕС!
-        const LOCAL_IP = '192.168.0.104'; // ← ВАЖНО: замените на свой IP!
-        return `http://${LOCAL_IP}:8080`;
-    };
+    // Базовый URL ДЛЯ ФИНАНСОВ (как в старом работающем коде)
+    const baseUrl = Platform.OS === 'android'
+        ? 'http://10.0.2.2:8080'
+        : 'http://192.168.31.18:8080'; // ← ВАЖНО: используем старый работающий IP для iOS
 
     // Загрузка новостей
     const loadNews = async () => {
         try {
             setNewsLoading(true);
             setNewsError(null);
-            console.log('🔄 Загрузка новостей...');
-            const news = await fetchLatestNews();
+            console.log('🔄 Загрузка новостей для userId:', userId);
+
+            // fetchLatestNews использует свой getBaseUrl из api/newsApi.ts
+            const news = await fetchLatestNews(userId);
             console.log(`✅ Загружено ${news.length} новостей`);
+
             setNewsItems(news);
         } catch (err: any) {
             setNewsError(err.message || 'Ошибка загрузки новостей');
@@ -100,15 +77,10 @@ export default function HomeScreen() {
         }
     };
 
-    // Загрузка текущего счета
+    // Загрузка текущего счета (ТОЧНО КАК В РАБОТАЮЩЕМ КОДЕ)
     const fetchCurrentBill = async () => {
         try {
-            setBillLoading(true);
-            const baseUrl = getBaseUrl();
-            const url = `${baseUrl}/api/finance/current/${userId}`;
-            console.log(`🌐 Запрос к API: ${url}`);
-
-            const response = await fetch(url);
+            const response = await fetch(`${baseUrl}/api/finance/current/${userId}`);
             const data = await response.json();
 
             if (data?.id) {
@@ -122,21 +94,27 @@ export default function HomeScreen() {
                 setCurrentBill(null);
             }
         } catch (e) {
-            console.error('❌ Ошибка загрузки счета:', e);
+            console.error('Ошибка загрузки счета:', e);
             setCurrentBill(null);
         } finally {
             setBillLoading(false);
         }
     };
 
+    // Первоначальная загрузка
     useEffect(() => {
         loadNews();
         loadServices();
+        fetchCurrentBill();
     }, []);
 
+    // Обновление при фокусе
     useFocusEffect(
         useCallback(() => {
+            setBillLoading(true);
             fetchCurrentBill();
+            // Дополнительно обновляем новости
+            loadNews();
         }, [])
     );
 
@@ -145,7 +123,6 @@ export default function HomeScreen() {
     };
 
     const handleServicePress = (service: ServiceItem) => {
-        // Разбираем строку времени "10:00-20:00" на начало и конец
         const timeRange = service.workHours || '10:00-20:00';
         const [startTime, endTime] = timeRange.split('-');
 
@@ -155,9 +132,9 @@ export default function HomeScreen() {
                 serviceId: service.id.toString(),
                 title: service.name,
                 price: service.price.toString(),
-                workHours: timeRange, // Передаем весь диапазон
-                startTime: startTime.trim(), // Начальное время
-                endTime: endTime?.trim() // Конечное время (если есть)
+                workHours: timeRange,
+                startTime: startTime.trim(),
+                endTime: endTime?.trim()
             },
         });
     };
@@ -166,7 +143,7 @@ export default function HomeScreen() {
         if (!currentBill) return;
 
         router.push({
-            pathname: '/finance/paymentScreen',
+            pathname: '/finance/paymentForServices',
             params: { billId: currentBill.id },
         });
     };
@@ -184,20 +161,7 @@ export default function HomeScreen() {
             'Грузчик': require('../../assets/icons/gruzchik.png'),
             'Мастер': require('../../assets/icons/master.png'),
         };
-
         return iconMap[serviceName] || require('../../assets/icons/master.png');
-    };
-
-    const formatPeriod = (period?: string) => {
-        if (!period) return '';
-        try {
-            const date = new Date(period);
-            const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
-            const formatted = date.toLocaleDateString('ru-RU', options);
-            return formatted.charAt(0).toLowerCase() + formatted.slice(1);
-        } catch {
-            return period;
-        }
     };
 
     return (
@@ -206,7 +170,9 @@ export default function HomeScreen() {
             {billLoading ? (
                 <ThemedCard style={{ marginTop: 65, padding: 24, alignItems: 'center' }}>
                     <ActivityIndicator size="small" color="#ffffff" />
-                    <ThemedText style={{ marginTop: 12, color: '#8A8A8A' }}>Загрузка информации о счете...</ThemedText>
+                    <ThemedText style={{ marginTop: 12, color: '#8A8A8A' }}>
+                        Загрузка информации о счете...
+                    </ThemedText>
                 </ThemedCard>
             ) : currentBill ? (
                 <ThemedCard style={{ marginTop: 65, padding: 16 }}>
@@ -257,10 +223,7 @@ export default function HomeScreen() {
                     withBackground={false}
                     style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}
                 >
-                    <ThemedText
-                        type="sectionTitle"
-                        style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}
-                    >
+                    <ThemedText type="sectionTitle" style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}>
                         Новости
                     </ThemedText>
                     <TouchableOpacity onPress={() => router.push('/news')}>
@@ -290,10 +253,6 @@ export default function HomeScreen() {
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                         {newsItems.map((news) => {
                             const imageUrl = getFullImageUrl(news.imageUrl);
-                            console.log(`🖼️ Новость ${news.id}:`, {
-                                original: news.imageUrl,
-                                full: imageUrl
-                            });
 
                             return (
                                 <NewsCard
@@ -316,10 +275,7 @@ export default function HomeScreen() {
                     withBackground={false}
                     style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}
                 >
-                    <ThemedText
-                        type="sectionTitle"
-                        style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}
-                    >
+                    <ThemedText type="sectionTitle" style={{ fontFamily: 'ActayWide-Bold', fontSize: 16 }}>
                         Услуги
                     </ThemedText>
                     <TouchableOpacity onPress={() => router.push('/services')}>
