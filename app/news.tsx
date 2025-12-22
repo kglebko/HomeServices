@@ -1,68 +1,30 @@
-// app/news/index.tsx
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react'; // ← Добавьте useCallback
 import { View, ScrollView, Image, TouchableOpacity, Pressable, ActivityIndicator } from 'react-native';
-import { router, useNavigation } from 'expo-router';
+import { router, useNavigation, useFocusEffect } from 'expo-router'; // ← Добавьте useFocusEffect
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedCard } from '@/components/themed-card';
 import { Ionicons } from '@expo/vector-icons';
-import { fetchAllNews, NewsItem, getFullImageUrl, getRelativeTime } from '@/api/newsApi';
+import { fetchAllNews, NewsItem, getFullImageUrl, getRelativeTime, toggleNewsLike } from '@/api/newsApi';
+
+const ORANGE_COLOR = '#FF6B35';
 
 export default function AllNewsScreen() {
     const [allNews, setAllNews] = useState<NewsItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const navigation = useNavigation();
+    const [likingNewsId, setLikingNewsId] = useState<number | null>(null);
 
-    useEffect(() => {
-        loadNews();
-    }, []);
+    const userId = 1;
 
-    useEffect(() => {
-        navigation.setOptions({
-            title: 'Все новости',
-            headerStyle: {
-                backgroundColor: '#1E1E1E',
-                elevation: 0,
-                shadowOpacity: 0,
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-                fontFamily: 'Actay-Bold',
-                fontSize: 16,
-            },
-            headerTitleAlign: 'center',
-            headerLeft: () => (
-                <Pressable
-                    onPress={() => router.back()}
-                    style={({ pressed }) => ({
-                        marginLeft: 16,
-                        padding: 8,
-                        marginRight: -8,
-                        opacity: pressed ? 0.7 : 1,
-                        backgroundColor: 'transparent',
-                        borderRadius: 0,
-                    })}
-                    android_ripple={null}
-                >
-                    <Image
-                        source={require('@/assets/images/back.png')}
-                        style={{
-                            width: 24,
-                            height: 24,
-                        }}
-                    />
-                </Pressable>
-            ),
-            headerBackVisible: false,
-        });
-    }, [navigation]);
-
+    // Загрузка новостей
     const loadNews = async () => {
         try {
             setLoading(true);
             setError(null);
-            const news = await fetchAllNews();
+            const news = await fetchAllNews(userId);
             setAllNews(news);
         } catch (err: any) {
             setError(err.message || 'Ошибка загрузки новостей');
@@ -72,10 +34,92 @@ export default function AllNewsScreen() {
         }
     };
 
-    const getRelativeTimeForNews = (newsItem: NewsItem): string => {
-        return newsItem.timeAgo || getRelativeTime(newsItem.updatedAt);
+    // ЗАГРУЖАЕМ ПРИ ПЕРВОМ ОТКРЫТИИ
+    useEffect(() => {
+        loadNews();
+    }, []);
+
+    // ДОБАВЬТЕ ЭТОТ КОД ДЛЯ АВТООБНОВЛЕНИЯ ПРИ КАЖДОМ ВХОДЕ НА ЭКРАН
+    useFocusEffect(
+        useCallback(() => {
+            console.log('🔄 Обновление списка новостей при входе на экран');
+            loadNews();
+        }, [])
+    );
+
+    useEffect(() => {
+        navigation.setOptions({
+            title: 'Все новости',
+            headerStyle: { backgroundColor: '#1E1E1E', elevation: 0, shadowOpacity: 0 },
+            headerTintColor: '#fff',
+            headerTitleStyle: { fontFamily: 'Actay-Bold', fontSize: 16 },
+            headerTitleAlign: 'center',
+            headerLeft: () => (
+                <Pressable
+                    onPress={() => router.back()}
+                    style={({ pressed }) => ({
+                        marginLeft: 16, padding: 8, marginRight: -8,
+                        opacity: pressed ? 0.7 : 1, backgroundColor: 'transparent', borderRadius: 0
+                    })}
+                    android_ripple={null}
+                >
+                    <Image
+                        source={require('@/assets/images/back.png')}
+                        style={{ width: 24, height: 24 }}
+                    />
+                </Pressable>
+            ),
+            headerBackVisible: false,
+        });
+    }, [navigation]);
+
+    // Обработчик лайка - ОСТАЕТСЯ БЕЗ ИЗМЕНЕНИЙ
+    const handleLikePress = async (newsId: number) => {
+        if (likingNewsId === newsId) return;
+
+        try {
+            setLikingNewsId(newsId);
+            const newsItem = allNews.find(news => news.id === newsId);
+            if (!newsItem) return;
+
+            const currentLikes = newsItem.likesCount;
+            const currentIsLiked = newsItem.isLiked || false;
+
+            setAllNews(prevNews =>
+                prevNews.map(news =>
+                    news.id === newsId
+                        ? {
+                            ...news,
+                            likesCount: currentIsLiked ? currentLikes - 1 : currentLikes + 1,
+                            isLiked: !currentIsLiked
+                        }
+                        : news
+                )
+            );
+
+            const result = await toggleNewsLike(newsId, userId);
+
+            if (!result.success) {
+                setAllNews(prevNews =>
+                    prevNews.map(news =>
+                        news.id === newsId
+                            ? {
+                                ...news,
+                                likesCount: currentLikes,
+                                isLiked: currentIsLiked
+                            }
+                            : news
+                    )
+                );
+            }
+        } catch (error) {
+            console.error('Ошибка при обновлении лайка:', error);
+        } finally {
+            setLikingNewsId(null);
+        }
     };
 
+    // Остальной код без изменений...
     if (loading) {
         return (
             <ScreenContainer scrollable>
@@ -125,6 +169,9 @@ export default function AllNewsScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
                 {allNews.map((news) => {
                     const imageUri = getFullImageUrl(news.imageUrl);
+                    const likeIconColor = news.isLiked ? ORANGE_COLOR : '#8A8A8A';
+                    const likeIconName = news.isLiked ? 'heart' : 'heart-outline';
+                    const isLiking = likingNewsId === news.id;
 
                     return (
                         <TouchableOpacity
@@ -134,23 +181,16 @@ export default function AllNewsScreen() {
                             style={{ marginBottom: 20 }}
                         >
                             <ThemedCard style={{ padding: 0, overflow: 'hidden' }}>
-                                {/* Изображение */}
                                 {imageUri ? (
                                     <Image
                                         source={{ uri: imageUri }}
-                                        style={{
-                                            width: '100%',
-                                            height: 180,
-                                        }}
+                                        style={{ width: '100%', height: 180 }}
                                         resizeMode="cover"
                                     />
                                 ) : (
                                     <View style={{
-                                        width: '100%',
-                                        height: 180,
-                                        backgroundColor: '#2A2A2A',
-                                        justifyContent: 'center',
-                                        alignItems: 'center'
+                                        width: '100%', height: 180, backgroundColor: '#2A2A2A',
+                                        justifyContent: 'center', alignItems: 'center'
                                     }}>
                                         <Ionicons name="image-outline" size={48} color="#8A8A8A" />
                                         <ThemedText style={{ color: '#8A8A8A', marginTop: 8 }}>
@@ -159,9 +199,7 @@ export default function AllNewsScreen() {
                                     </View>
                                 )}
 
-                                {/* Контент */}
                                 <View style={{ padding: 16 }}>
-                                    {/* Категория */}
                                     <View style={{
                                         backgroundColor: '#333333',
                                         alignSelf: 'flex-start',
@@ -182,7 +220,6 @@ export default function AllNewsScreen() {
                                         </ThemedText>
                                     </View>
 
-                                    {/* Заголовок */}
                                     <ThemedText style={{
                                         fontFamily: 'ActayWide-Bold',
                                         fontSize: 18,
@@ -193,7 +230,6 @@ export default function AllNewsScreen() {
                                         {news.title}
                                     </ThemedText>
 
-                                    {/* Время и автор */}
                                     <View style={{
                                         flexDirection: 'row',
                                         justifyContent: 'space-between',
@@ -206,27 +242,31 @@ export default function AllNewsScreen() {
                                             fontFamily: 'Actay',
                                             flex: 1,
                                         }}>
-                                            {getRelativeTimeForNews(news)} • {news.author}
+                                            {news.timeAgo || getRelativeTime(news.updatedAt)} • {news.author}
                                         </ThemedText>
-                                    </View>
 
-                                    {/* Лайки и комментарии */}
-                                    <View style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        justifyContent: 'flex-end',
-                                        gap: 20,
-                                        borderTopWidth: 1,
-                                        borderTopColor: '#2A2A2A',
-                                        paddingTop: 12,
-                                        marginTop: 4,
-                                    }}>
-                                        <View style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                        }}>
-                                            <Ionicons name="heart-outline" size={18} color="#8A8A8A" />
+                                        <TouchableOpacity
+                                            onPress={(e) => {
+                                                e.stopPropagation();
+                                                handleLikePress(news.id);
+                                            }}
+                                            style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                gap: 6,
+                                            }}
+                                            disabled={isLiking}
+                                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                                        >
+                                            {isLiking ? (
+                                                <ActivityIndicator size={18} color={likeIconColor} />
+                                            ) : (
+                                                <Ionicons
+                                                    name={likeIconName}
+                                                    size={18}
+                                                    color={likeIconColor}
+                                                />
+                                            )}
                                             <ThemedText style={{
                                                 fontSize: 14,
                                                 color: '#8A8A8A',
@@ -234,22 +274,7 @@ export default function AllNewsScreen() {
                                             }}>
                                                 {news.likesCount}
                                             </ThemedText>
-                                        </View>
-
-                                        <View style={{
-                                            flexDirection: 'row',
-                                            alignItems: 'center',
-                                            gap: 6,
-                                        }}>
-                                            <Ionicons name="chatbubble-outline" size={18} color="#8A8A8A" />
-                                            <ThemedText style={{
-                                                fontSize: 14,
-                                                color: '#8A8A8A',
-                                                fontFamily: 'Actay',
-                                            }}>
-                                                {news.commentsCount}
-                                            </ThemedText>
-                                        </View>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
                             </ThemedCard>

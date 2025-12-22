@@ -102,7 +102,7 @@ export default function ServicesScreen() {
 
     const handleServicePress = (service: typeof ALL_SERVICES[0]) => {
         router.push({
-            pathname: '/request',
+            pathname: '../request',
             params: {
                 title: service.title,
                 icon: service.serviceType,
