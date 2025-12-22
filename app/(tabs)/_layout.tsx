@@ -1,19 +1,23 @@
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
 
 
 import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#D64105', // цвет активной иконки
-        tabBarInactiveTintColor: '#DCDCDC', // неактивная иконка
-        headerShown: false, // скрыть заголовок сверху
+        tabBarActiveTintColor: '#D64105',
+        tabBarInactiveTintColor: '#DCDCDC',
+        headerShown: false,
+        tabBarLabelStyle: {
+          fontFamily: 'Actay',
+          fontSize: 11,
+    },
       }}
       >
 
@@ -47,14 +51,15 @@ export default function TabLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="chats"
-        options={{
-          title: 'Чаты',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubbles-outline" color={color} size={size} />
-          ),
-        }}
+        <Tabs.Screen
+            name="chats"
+            options={{
+                title: 'Канал',
+                headerShown: false,
+                tabBarIcon: ({ color, size }) => (
+                    <Ionicons name="chatbubble-outline" size={size} color={color} />
+                ),
+            }}
       />
 
       <Tabs.Screen
