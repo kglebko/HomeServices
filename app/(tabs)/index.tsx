@@ -1,13 +1,13 @@
-import React from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { NewsCard } from '@/components/news/NewsCard';
 import { ScreenContainer } from '@/components/ScreenContainer';
-import { ThemedView } from '@/components/themed-view';
-import { ThemedText } from '@/components/themed-text';
+import { ServiceTile } from '@/components/services/ServiceTile';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedCard } from '@/components/themed-card';
+import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import { NewsCard } from '@/components/news/NewsCard';
-import { ServiceTile } from '@/components/services/ServiceTile';
+import React from 'react';
+import { ScrollView, TouchableOpacity } from 'react-native';
 
 export default function HomeScreen() {
     const NEWS_ITEMS = [

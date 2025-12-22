@@ -27,7 +27,7 @@ export default function CodeVerificationScreen() {
     };
     loadContact();
   }, []);
-
+  
   // Таймер для повторной отправки кода
   useEffect(() => {
     let interval: ReturnType<typeof setInterval>;
@@ -86,11 +86,11 @@ export default function CodeVerificationScreen() {
     if (isResendEnabled && contact) {
       try {
         await apiService.sendCode(contact);
-        Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
-        setTimer(60);
-        setIsResendEnabled(false);
-        setCode(["", "", "", ""]);
-        inputsRef.current[0]?.focus();
+      Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
+      setTimer(60);
+      setIsResendEnabled(false);
+      setCode(["", "", "", ""]);
+      inputsRef.current[0]?.focus();
       } catch (error: any) {
         Alert.alert("Ошибка", error.message || "Не удалось отправить код. Попробуйте еще раз.");
       }
@@ -114,9 +114,9 @@ export default function CodeVerificationScreen() {
         // Код подтвержден, сохраняем его для дальнейшего использования
         await storage.saveResetPasswordCode(verificationCode);
         // Переходим к смене пароля
-        router.push("/profile/changeForgotPassword");
-      } else {
-        Alert.alert("Ошибка!", "Неверный код подтверждения");
+      router.push("/profile/changeForgotPassword");
+    } else {
+      Alert.alert("Ошибка!", "Неверный код подтверждения");
         // Очистка полей при ошибке
         setCode(["", "", "", ""]);
         inputsRef.current[0]?.focus();
