@@ -18,7 +18,7 @@ export default function PaymentSuccessScreen() {
     };
 
     const handleGoHome = () => {
-    router.replace('../../');
+    router.replace('/(tabs)');
     };
 
 

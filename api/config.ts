@@ -4,10 +4,10 @@ import { Platform } from 'react-native';
 // ==== ВАЖНО: ЗАМЕНИТЕ НА СВОЙ IP! ====
 // Узнайте IP командой: ipconfig (Windows) или ifconfig (Mac/Linux)
 // Ищите IPv4 адрес (обычно 192.168.1.xxx или 192.168.0.xxx)
-const LOCAL_IP = '192.168.0.104'; // ← ЗАМЕНИТЕ НА СВОЙ!
+const LOCAL_IP = process.env.EXPO_PUBLIC_API_IP || '192.168.0.105'; // ← Унифицированный IP
 
 // Базовый URL для всех запросов
-export const BASE_URL = `http://${LOCAL_IP}:8080`;
+export const BASE_URL = `http://${LOCAL_IP}:8081`;
 export const API_BASE_URL = `${BASE_URL}/api`;
 
 console.log(`📱 Платформа: ${Platform.OS}`);

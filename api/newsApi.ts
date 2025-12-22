@@ -5,11 +5,12 @@ import { Platform } from 'react-native';
 const getBaseUrl = (): string => {
     // Android эмулятор - специальный адрес 10.0.2.2
     if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8080'; // Android эмулятор
+        return 'http://10.0.2.2:8081'; // Android эмулятор
     }
 
-    // Для iOS или физического устройства
-    return 'http://192.168.0.104:8080';
+    // Для iOS или физического устройства - используем тот же IP, что и в services/api.ts
+    const DEVICE_IP = process.env.EXPO_PUBLIC_API_IP || '192.168.0.105';
+    return `http://${DEVICE_IP}:8081`;
 };
 
 const API_BASE_URL = `${getBaseUrl()}/api`;
@@ -82,11 +83,19 @@ const apiFetch = async (endpoint: string) => {
 
     try {
         console.log(`🌐 Запрос к API: ${url}`);
+        
+        // Добавляем таймаут для запроса
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд
+        
         const response = await fetch(url, {
             headers: {
                 'Accept': 'application/json',
             },
+            signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -94,6 +103,10 @@ const apiFetch = async (endpoint: string) => {
 
         return await response.json();
     } catch (error: any) {
+        if (error.name === 'AbortError') {
+            console.error(`⏰ Таймаут запроса ${endpoint}`);
+            throw new Error('Превышено время ожидания сервера');
+        }
         console.error(`❌ Ошибка запроса ${endpoint}:`, error.message);
         throw error;
     }

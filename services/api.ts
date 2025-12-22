@@ -59,10 +59,10 @@ const getApiBaseUrl = () => {
   // В режиме разработки
   if (Platform.OS === 'android') {
     // Android эмулятор использует специальный адрес
-    return 'http://10.0.2.2:8080/api';
+    return 'http://10.0.2.2:8081/api';
   } else if (Platform.OS === 'web') {
     // Веб-версия
-    return 'http://localhost:8080/api';
+    return 'http://localhost:8081/api';
   } else if (Platform.OS === 'ios') {
     // iOS
     if (isRealDevice()) {
@@ -75,19 +75,19 @@ const getApiBaseUrl = () => {
         console.warn('3. Замените YOUR_COMPUTER_IP на ваш IP адрес (например: 192.168.1.100)');
         console.warn('4. Убедитесь, что iPhone и компьютер в одной Wi-Fi сети');
         // Fallback на localhost (не будет работать на реальном устройстве)
-        return 'http://localhost:8080/api';
+        return 'http://localhost:8081/api';
       }
-      const url = `http://${DEVICE_IP}:8080/api`;
+      const url = `http://${DEVICE_IP}:8081/api`;
       console.log(`📱 Используется IP адрес для реального устройства: ${url}`);
       return url;
     } else {
       // iOS симулятор
-      return 'http://localhost:8080/api';
+      return 'http://localhost:8081/api';
     }
   }
   
   // Fallback
-  return 'http://localhost:8080/api';
+  return 'http://localhost:8081/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
@@ -183,7 +183,16 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(url, config);
+      // Добавляем таймаут для запроса (15 секунд)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      
+      const response = await fetch(url, {
+        ...config,
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
       
       // Для отладки: логируем статус и заголовки
       if (response.status === 403) {
@@ -290,6 +299,17 @@ class ApiService {
       
       return data;
     } catch (error) {
+      // Обработка таймаута
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('API Request Timeout:', {
+          endpoint,
+          timeout: '15 seconds',
+        });
+        const timeoutError = new Error('Превышено время ожидания сервера') as Error & { status?: number };
+        timeoutError.status = 408;
+        throw timeoutError;
+      }
+      
       console.error('API Error:', {
         endpoint,
         error: error instanceof Error ? error.message : String(error),

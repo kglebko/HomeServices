@@ -1,23 +1,23 @@
 import { Platform } from 'react-native';
 
 // ==== ВАЖНО: ИСПОЛЬЗУЙТЕ ОДИН И ТОТ ЖЕ IP ДЛЯ ВСЕХ API! ====
-const LOCAL_IP = '192.168.0.104'; // ← Тот же IP, что и в newsApi.ts
+const LOCAL_IP = process.env.EXPO_PUBLIC_API_IP || '192.168.0.105'; // ← Унифицированный IP
 
 // Функция для получения базового URL
 const getBaseUrl = (): string => {
     // В режиме разработки для эмуляторов/симуляторов
     if (__DEV__) {
         if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080'; // Android эмулятор
+            return 'http://10.0.2.2:8081'; // Android эмулятор
         }
         if (Platform.OS === 'ios') {
             // Для реального iOS устройства используем IP, для симулятора - localhost
-            return `http://${LOCAL_IP}:8080`; // Всегда используем IP для iOS
+            return `http://${LOCAL_IP}:8081`; // Всегда используем IP для iOS
         }
     }
 
     // Для физических устройств и продакшена
-    return `http://${LOCAL_IP}:8080`;
+    return `http://${LOCAL_IP}:8081`;
 };
 
 const API_BASE_URL = `${getBaseUrl()}/api`;

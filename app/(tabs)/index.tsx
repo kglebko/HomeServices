@@ -1,3 +1,4 @@
+import { fetchLatestNews, getFullImageUrl, NewsItem } from '@/api/newsApi';
 import { NewsCard } from '@/components/news/NewsCard';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ServiceTile } from '@/components/services/ServiceTile';
@@ -6,26 +7,30 @@ import { ThemedCard } from '@/components/themed-card';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { router } from 'expo-router';
-import React from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Image, ScrollView, TouchableOpacity } from 'react-native';
 
 export default function HomeScreen() {
-    const NEWS_ITEMS = [
-        {
-            id: 1,
-            image: require('../../assets/images/news1.png'),
-            title: "Каждый подъезд дома был украшен к Новому году!",
-            time: "Вчера 19:00",
-            category: "Праздники",
-        },
-        {
-            id: 2,
-            image: require('../../assets/images/news2.png'),
-            title: "Обновление системы оплаты",
-            time: "2 дня назад",
-            category: "Уведомление",
-        },
-    ];
+    const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
+    const [loadingNews, setLoadingNews] = useState(true);
+
+    useEffect(() => {
+        loadNews();
+    }, []);
+
+    const loadNews = async () => {
+        try {
+            setLoadingNews(true);
+            const news = await fetchLatestNews();
+            // Берем только первые 2 новости для главного экрана
+            setNewsItems(news.slice(0, 2));
+        } catch (error) {
+            console.error('Ошибка загрузки новостей:', error);
+            setNewsItems([]);
+        } finally {
+            setLoadingNews(false);
+        }
+    };
 
     const handleNewsPress = (newsId: number) => {
         router.push(`/news/${newsId}` as any);
@@ -55,7 +60,7 @@ export default function HomeScreen() {
                     <ThemedButton
                         title="Оплатить"
                         style={{ width: 140, paddingVertical: 12, marginLeft: 16 }}
-                        onPress={() => router.push('/finance/paymentScreen')}
+                        onPress={() => router.push('/(tabs)/finance/paymentScreen' as any)}
                     />
                 </ThemedView>
             </ThemedCard>
@@ -77,18 +82,33 @@ export default function HomeScreen() {
                     </TouchableOpacity>
                 </ThemedView>
 
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {NEWS_ITEMS.map((news) => (
-                        <NewsCard
-                            key={news.id}
-                            image={news.image}
-                            title={news.title}
-                            time={news.time}
-                            category={news.category}
-                            onPress={() => handleNewsPress(news.id)}
-                        />
-                    ))}
-                </ScrollView>
+                {loadingNews ? (
+                    <ActivityIndicator size="small" color="#D64105" style={{ marginVertical: 20 }} />
+                ) : newsItems.length > 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {newsItems.map((news) => {
+                            const imageUrl = getFullImageUrl(news.imageUrl);
+                            // Если нет изображения, используем placeholder
+                            const placeholderImage = Image.resolveAssetSource(require('../../assets/images/home54.png'));
+                            const finalImageUri = imageUrl || placeholderImage?.uri || '';
+                            
+                            return (
+                                <NewsCard
+                                    key={news.id}
+                                    imageUri={finalImageUri}
+                                    title={news.title}
+                                    time={news.timeAgo || 'недавно'}
+                                    category={news.category}
+                                    onPress={() => handleNewsPress(news.id)}
+                                />
+                            );
+                        })}
+                    </ScrollView>
+                ) : (
+                    <ThemedText type="littleLabel" style={{ paddingVertical: 20, textAlign: 'center' }}>
+                        Новостей пока нет
+                    </ThemedText>
+                )}
             </ThemedView>
 
             {/* ---- УСЛУГИ ---- */}
