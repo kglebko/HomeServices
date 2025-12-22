@@ -7,16 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 
 export default function RegistrationScreen() {
@@ -28,7 +28,10 @@ export default function RegistrationScreen() {
 
   // Моковые данные жильца (в реальном приложении будут приходить из QR-кода или API)
   const residentData = {
-    fullName: 'Глебко Константин Романович',
+    firstName: 'Константин',
+    lastName: 'Глебко',
+    patronymic: 'Романович',
+    fullName: 'Глебко Константин Романович', // Для отображения
     address: 'ул. Пономаренко 54-54',
     accountNumber: '2093350054',
     residentsCount: '4'

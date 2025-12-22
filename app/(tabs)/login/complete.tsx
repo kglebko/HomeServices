@@ -124,10 +124,13 @@ const validateForm = () => {
         const response = await apiService.register({
             contact,
             password,
-            fullName: `${residentData.last_name} ${residentData.first_name} ${residentData.patronymic}`,
+            firstName: residentData.first_name,
+            lastName: residentData.last_name,
+            patronymic: residentData.patronymic,
             address: residentData.address,
             accountNumber: residentData.accountNumber,
-            residentsCount: residentData.residents_count
+            residentsCount: residentData.residents_count,
+            role: 'user' // Устанавливаем роль по умолчанию для новых пользователей
         });
         
         if (response.success && response.data) {
@@ -204,13 +207,17 @@ const validateForm = () => {
 
   return (
     <ScreenContainer>
-        <ScrollView showsVerticalScrollIndicator={false}>
-      <TouchableWithoutFeedback onPress={dismissKeyboard}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
         >
-          
+          <TouchableWithoutFeedback onPress={dismissKeyboard}>
             <View style={styles.container}>
               {/* Заголовок */}
               <View style={styles.header}>
@@ -442,10 +449,9 @@ const validateForm = () => {
                 <Text style={styles.backButtonText}>Вернуться назад</Text>
               </TouchableOpacity>
             </View>
-        
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
+          </TouchableWithoutFeedback>
         </ScrollView>
+      </KeyboardAvoidingView>
     </ScreenContainer>
   );
 }

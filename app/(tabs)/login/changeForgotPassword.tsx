@@ -1,8 +1,10 @@
 import { ChangePasswordScreenStyles as styles } from "@/components/ChangePasswordScreenStyles";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Keyboard,
@@ -17,12 +19,31 @@ import {
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
-  const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [contact, setContact] = useState<string>("");
+  const [code, setCode] = useState<string>("");
+
+  // Загружаем контакт и код, проверяем, что код был подтвержден
+  useEffect(() => {
+    const loadData = async () => {
+      const savedContact = await storage.getResetPasswordContact();
+      const savedCode = await storage.getResetPasswordCode();
+      
+      if (!savedContact || !savedCode) {
+        Alert.alert("Ошибка", "Данные не найдены. Пожалуйста, начните восстановление пароля заново.", [
+          { text: "OK", onPress: () => router.replace("/login/forgotPassword") }
+        ]);
+        return;
+      }
+      setContact(savedContact);
+      setCode(savedCode);
+    };
+    loadData();
+  }, []);
 
   // Валидация пароля
   const validatePassword = (password: string) => {
@@ -38,8 +59,8 @@ export default function ChangePasswordScreen() {
     return null;
   };
 
-  // Смена пароля
-  const handleChangePassword = () => {
+  // Сброс пароля
+  const handleResetPassword = async () => {
     Keyboard.dismiss();
 
     // Проверка на пустые поля
@@ -61,29 +82,50 @@ export default function ChangePasswordScreen() {
       return;
     }
 
-    
+    if (!contact) {
+      Alert.alert("Ошибка", "Контакт не найден. Пожалуйста, начните восстановление пароля заново.");
+      router.replace("/login/forgotPassword");
+      return;
+    }
 
-    // Здесь будет API-запрос на смену пароля
-    console.log("Смена пароля:", {
-      oldPassword,
-      newPassword,
-      confirmPassword,
-    });
+    if (!code) {
+      Alert.alert("Ошибка", "Код не найден. Пожалуйста, начните восстановление пароля заново.");
+      router.replace("/login/forgotPassword");
+      return;
+    }
 
-    // Имитация успешной смены пароля
-    Alert.alert(
-      "Успешно!",
-      "Пароль успешно изменен",
-      [
-        {
-          text: "OK",
-           onPress: () => {
-            // Переход после подтверждения
-            router.push("/login");
-          },
-        }
-      ]
-    );
+    setIsLoading(true);
+
+    try {
+      // Используем сохраненный код для сброса пароля
+      const response = await apiService.resetPassword(contact, code, newPassword);
+      
+      if (response.success) {
+        // Очищаем сохраненный контакт
+        await storage.clearResetPasswordContact();
+        
+        Alert.alert(
+          "Успешно!",
+          "Пароль успешно изменен",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Переход на экран логина
+                router.replace("/login");
+              },
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Ошибка", response.message || "Не удалось изменить пароль. Попробуйте еще раз.");
+      }
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      Alert.alert("Ошибка", error.message || "Не удалось изменить пароль. Попробуйте еще раз.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
 
@@ -184,13 +226,14 @@ export default function ChangePasswordScreen() {
           <TouchableOpacity
             style={[
               styles.changeButton,
-              ( !newPassword || !confirmPassword) && styles.changeButtonDisabled
+              (!newPassword || !confirmPassword || isLoading) && styles.changeButtonDisabled
             ]}
-           
-           onPress={handleChangePassword}
-            disabled={ !newPassword || !confirmPassword}
+            onPress={handleResetPassword}
+            disabled={!newPassword || !confirmPassword || isLoading}
           >
-            <Text style={styles.changeButtonText}>Сменить пароль</Text>
+            <Text style={styles.changeButtonText}>
+              {isLoading ? "Изменение пароля..." : "Сменить пароль"}
+            </Text>
           </TouchableOpacity>
 
           {/* Информация о безопасности */}

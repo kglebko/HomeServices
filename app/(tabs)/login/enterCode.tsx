@@ -29,7 +29,7 @@ export default function CodeVerificationScreen() {
   
   // Таймер для повторной отправки кода
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (timer > 0) {
       interval = setInterval(() => {
@@ -43,7 +43,11 @@ export default function CodeVerificationScreen() {
       }, 1000);
     }
     
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [timer]);
 
   // Обработка изменения кода
@@ -152,7 +156,9 @@ export default function CodeVerificationScreen() {
           {code.map((digit, index) => (
             <TextInput
               key={index}
-              ref={(ref) => (inputsRef.current[index] = ref)}
+              ref={(ref) => {
+                inputsRef.current[index] = ref;
+              }}
               style={[
                 styles.codeInput,
                 digit && styles.codeInputFilled,

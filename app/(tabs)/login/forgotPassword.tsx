@@ -1,25 +1,27 @@
-import { ScreenContainer } from "@/components/ScreenContainer";
 import { ForgotPassword as styles } from "@/components/ForgotPassword";
+import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Keyboard,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from "react-native";
 
 export default function ForgotPasswordScreen() {
   const router = useRouter();
   const [contact, setContact] = useState("");
   const [isEmail, setIsEmail] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Определяем, что ввел пользователь: email или телефон
   const detectInputType = (text: string) => {
@@ -115,6 +117,50 @@ const formatPhoneNumber = (text: string) => {
     return "+375 или example@email.com";
   };
 
+  // Отправка кода для восстановления пароля
+  const handleSendCode = async () => {
+    Keyboard.dismiss();
+    
+    const validationError = validateContact();
+    if (validationError) {
+      Alert.alert("Ошибка", validationError);
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // Нормализуем контакт (убираем форматирование телефона)
+      const normalizedContact = contact.trim();
+      
+      // Сохраняем контакт для дальнейшего использования
+      await storage.saveResetPasswordContact(normalizedContact);
+      
+      // Отправляем код через API
+      const response = await apiService.sendCode(normalizedContact);
+      
+      if (response.success) {
+        // Успешно - переходим на экран ввода кода
+        router.push("/login/enterCode2");
+        
+        // Показываем информацию о коде
+        setTimeout(() => {
+          Alert.alert(
+            "Код отправлен",
+            `Код подтверждения отправлен на ${isEmail ? 'email' : 'телефон'}: ${normalizedContact}\n\nПримечание: В режиме разработки код будет показан в консоли сервера.`
+          );
+        }, 500);
+      } else {
+        Alert.alert("Ошибка", response.message || "Не удалось отправить код");
+      }
+    } catch (error: any) {
+      console.error('Send code error:', error);
+      Alert.alert("Ошибка", error.message || "Не удалось отправить код. Проверьте подключение к серверу.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <ScreenContainer>
       <KeyboardAvoidingView
@@ -176,12 +222,14 @@ const formatPhoneNumber = (text: string) => {
           <TouchableOpacity
             style={[
               styles.sendButton,
-              !contact.trim() && styles.sendButtonDisabled
+              (!contact.trim() || isLoading) && styles.sendButtonDisabled
             ]}
-            onPress={() => router.push("/login/enterCode2")}
-            disabled={!contact.trim()}
+            onPress={handleSendCode}
+            disabled={!contact.trim() || isLoading}
           >
-            <Text style={styles.sendButtonText}>Отправить код</Text>
+            <Text style={styles.sendButtonText}>
+              {isLoading ? "Отправка..." : "Отправить код"}
+            </Text>
           </TouchableOpacity>
 
           {/* Альтернативный вариант */}

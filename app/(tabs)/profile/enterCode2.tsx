@@ -1,5 +1,7 @@
 import { CodeScreenStyles as styles } from "@/components/CodeScreenStyles";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
+import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
@@ -13,9 +15,22 @@ export default function CodeVerificationScreen() {
   const inputsRef = useRef<Array<TextInput | null>>([]);
 
   
+  const [contact, setContact] = useState<string>("");
+
+  // Загружаем контакт при монтировании компонента
+  useEffect(() => {
+    const loadContact = async () => {
+      const savedContact = await storage.getResetPasswordContact();
+      if (savedContact) {
+        setContact(savedContact);
+      }
+    };
+    loadContact();
+  }, []);
+
   // Таймер для повторной отправки кода
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (timer > 0) {
       interval = setInterval(() => {
@@ -29,7 +44,11 @@ export default function CodeVerificationScreen() {
       }, 1000);
     }
     
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
   }, [timer]);
 
   // Обработка изменения кода
@@ -63,30 +82,47 @@ export default function CodeVerificationScreen() {
   };
 
   // Повторная отправка кода
-  const handleResendCode = () => {
-    if (isResendEnabled) {
-      // Здесь логика повторной отправки кода
-      Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
-      setTimer(60);
-      setIsResendEnabled(false);
-      setCode(["", "", "", ""]);
-      inputsRef.current[0]?.focus();
+  const handleResendCode = async () => {
+    if (isResendEnabled && contact) {
+      try {
+        await apiService.sendCode(contact);
+        Alert.alert("Код отправлен", "Новый код подтверждения отправлен на ваше устройство");
+        setTimer(60);
+        setIsResendEnabled(false);
+        setCode(["", "", "", ""]);
+        inputsRef.current[0]?.focus();
+      } catch (error: any) {
+        Alert.alert("Ошибка", error.message || "Не удалось отправить код. Попробуйте еще раз.");
+      }
     }
   };
 
   // Подтверждение кода
-  const handleVerifyCode = (verificationCode: string) => {
+  const handleVerifyCode = async (verificationCode: string) => {
     Keyboard.dismiss();
     
-    // Здесь логика проверки кода
-    console.log("Код для проверки:", verificationCode);
+    if (!contact) {
+      Alert.alert("Ошибка", "Контакт не найден. Пожалуйста, начните восстановление пароля заново.");
+      router.back();
+      return;
+    }
     
-    // Пример успешной проверки
-    if (verificationCode === "1234") { // Замените на реальную проверку
-      Alert.alert("Успешно!", "Введите новый пароль");
-      router.push("/profile/changeForgotPassword");
-    } else {
-      Alert.alert("Ошибка!", "Неверный код подтверждения");
+    try {
+      const response = await apiService.verifyCode(contact, verificationCode);
+      
+      if (response.success && response.data) {
+        // Код подтвержден, сохраняем его для дальнейшего использования
+        await storage.saveResetPasswordCode(verificationCode);
+        // Переходим к смене пароля
+        router.push("/profile/changeForgotPassword");
+      } else {
+        Alert.alert("Ошибка!", "Неверный код подтверждения");
+        // Очистка полей при ошибке
+        setCode(["", "", "", ""]);
+        inputsRef.current[0]?.focus();
+      }
+    } catch (error: any) {
+      Alert.alert("Ошибка!", error.message || "Неверный код подтверждения");
       // Очистка полей при ошибке
       setCode(["", "", "", ""]);
       inputsRef.current[0]?.focus();
@@ -126,7 +162,9 @@ export default function CodeVerificationScreen() {
           {code.map((digit, index) => (
             <TextInput
               key={index}
-              ref={(ref) => (inputsRef.current[index] = ref)}
+              ref={(ref) => {
+                inputsRef.current[index] = ref;
+              }}
               style={[
                 styles.codeInput,
                 digit && styles.codeInputFilled,

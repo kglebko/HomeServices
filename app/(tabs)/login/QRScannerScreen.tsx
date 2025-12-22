@@ -4,16 +4,16 @@ import { Camera, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Linking,
-    Platform,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    View
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Linking,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -28,7 +28,7 @@ export default function QRScannerScreen() {
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   
   // Реф для камеры
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<Camera | null>(null);
 
   // Используем хук для разрешений
   const [permission, requestPermission] = useCameraPermissions();
@@ -55,7 +55,7 @@ export default function QRScannerScreen() {
       try {
         // Включаем/выключаем фонарик
         const newTorchState = !torchOn;
-        await cameraRef.current.torchAsync(torchOn);
+        await cameraRef.current.torchAsync(newTorchState);
         setTorchOn(newTorchState);
       } catch (error) {
         console.log('Ошибка переключения фонарика:', error);
@@ -153,7 +153,7 @@ export default function QRScannerScreen() {
         { text: "Отмена", style: "cancel" },
         { 
           text: "OK", 
-          onPress: (text) => {
+          onPress: (text?: string) => {
             if (text && text.trim().length > 0) {
               processQRCodeData(text);
             }
@@ -176,7 +176,7 @@ export default function QRScannerScreen() {
   if (!hasPermission) {
     return (
       <View style={[styles.container, styles.centerContent]}>
-        <Ionicons name="camera-off" size={80} color="#D64105" style={styles.icon} />
+        <Ionicons name="camera-outline" size={80} color="#D64105" style={styles.icon} />
         <Text style={styles.permissionText}>Нет доступа к камере</Text>
         <Text style={styles.permissionSubtext}>
           Для сканирования QR-кода необходимо разрешить доступ к камере
@@ -208,17 +208,17 @@ export default function QRScannerScreen() {
 
   return (
     <View style={styles.container}>
-      <Camera>
+      <Camera
         ref={cameraRef}
         style={StyleSheet.absoluteFillObject}
-        type={facing}
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        facing={facing}
+        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         // Настройки камеры для лучшего сканирования
-        autoFocus="on"
+        autofocus="on"
         zoom={0}
         whiteBalance="auto"
         ratio="16:9"
-      </Camera>
+      />
       
       {/* Overlay с рамкой для сканирования */}
       <View style={styles.overlay}>

@@ -36,7 +36,9 @@ export interface AuthResponse {
     id: number;
     phone: string | null;
     email: string | null;
-    fullName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    patronymic: string | null;
     address: string | null;
     accountNumber: string | null;
     residentsCount: number | null;
@@ -68,6 +70,21 @@ class ApiService {
       ...options,
     };
 
+    // Логируем тело запроса для регистрации
+    if (endpoint === '/auth/register' && options.body) {
+      try {
+        const bodyData = JSON.parse(options.body as string);
+        console.log('=== REQUEST BODY DEBUG ===');
+        console.log('Endpoint:', endpoint);
+        console.log('Body data:', bodyData);
+        console.log('Role in body:', bodyData.role);
+        console.log('Body string:', options.body);
+        console.log('==========================');
+      } catch (e) {
+        console.log('Could not parse request body for logging');
+      }
+    }
+
     try {
       const response = await fetch(url, config);
       
@@ -83,6 +100,12 @@ class ApiService {
       const data = await response.json();
       
       if (!response.ok) {
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          endpoint,
+          errorData: data,
+        });
         const error = new Error(data.message || 'Request failed') as Error & { status?: number };
         error.status = response.status;
         throw error;
@@ -130,14 +153,29 @@ class ApiService {
   async register(data: {
     contact: string;
     password: string;
-    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    patronymic?: string;
     address?: string;
     accountNumber?: string;
     residentsCount?: number;
+    role?: string;
   }): Promise<ApiResponse<AuthResponse>> {
+    // Убеждаемся, что role всегда передается
+    const registerData = {
+      ...data,
+      role: data.role || 'user', // Устанавливаем значение по умолчанию, если не указано
+    };
+    
+    console.log('=== REGISTER REQUEST ===');
+    console.log('Register data being sent:', JSON.stringify(registerData, null, 2));
+    console.log('Role value:', registerData.role);
+    console.log('Has role field:', 'role' in registerData);
+    console.log('========================');
+    
     return this.request<AuthResponse>('/auth/register', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(registerData),
     });
   }
 
@@ -161,12 +199,22 @@ class ApiService {
   }
 
   /**
-   * Смена пароля
+   * Смена пароля (для авторизованных пользователей)
    */
   async changePassword(oldPassword: string, newPassword: string): Promise<ApiResponse<string>> {
     return this.request<string>('/auth/change-password', {
       method: 'POST',
       body: JSON.stringify({ oldPassword, newPassword }),
+    });
+  }
+
+  /**
+   * Сброс пароля (для восстановления пароля после проверки кода)
+   */
+  async resetPassword(contact: string, code: string, newPassword: string): Promise<ApiResponse<string>> {
+    return this.request<string>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ contact, code, newPassword }),
     });
   }
 

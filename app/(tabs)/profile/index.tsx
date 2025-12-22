@@ -11,7 +11,9 @@ interface UserData {
   id: number;
   phone: string | null;
   email: string | null;
-  fullName: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  patronymic: string | null;
   address: string | null;
   accountNumber: string | null;
   residentsCount: number | null;
@@ -93,10 +95,11 @@ export default function ProfileScreen() {
     }
   };
 
-  // Форматирование имени (разделение на имя и фамилию)
+  // Форматирование имени (объединение имени, фамилии и отчества)
   const getDisplayName = () => {
-    if (!userData?.fullName) return "Пользователь";
-    return userData.fullName;
+    if (!userData?.firstName && !userData?.lastName) return "Пользователь";
+    const parts = [userData.lastName, userData.firstName, userData.patronymic].filter(Boolean);
+    return parts.length > 0 ? parts.join(' ') : "Пользователь";
   };
 
   // Определение типа контакта
