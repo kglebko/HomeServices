@@ -1,142 +1,26 @@
-import React, { useEffect } from 'react';
-import { View, ScrollView, Image, TouchableOpacity, Pressable } from 'react-native';
+// app/news/[id].tsx
+import React, { useState, useEffect } from 'react';
+import { View, ScrollView, Image, TouchableOpacity, Pressable, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { ThemedButton } from '@/components/themed-button';
 import { Ionicons } from '@expo/vector-icons';
-
-// Все новости в одном объекте
-const ALL_NEWS = [
-    {
-        id: 1,
-        image: require('../../assets/images/news1.png'),
-        title: "Каждый подъезд дома был украшен к Новому году!",
-        time: "Вчера 19:00",
-        category: "Праздники",
-        content: "Жители нашего дома совместными усилиями украсили все подъезды к Новому году. Были установлены гирлянды, новогодние елки и праздничные украшения. Особенно красиво выглядит главный вход с большими снежинками и световой инсталляцией.\n\nАктивное участие в украшении приняли семьи из подъездов №3 и №7, которые подготовили handmade украшения. Вечером 31 декабря планируется общее празднование с фейерверком.",
-        author: "Совет дома",
-        likes: 24,
-        comments: 8,
-        fullContent: `Жители нашего жилого комплекса проявили невероятную активность и творческий подход при подготовке к Новому году. Благодаря совместным усилиям все 8 подъездов нашего дома превратились в настоящую зимнюю сказку.
-
-Основные украшения:
-• Главный вход: световая инсталляция "Снегопад"
-• Подъезд №1: гирлянды с цветными огнями
-• Подъезд №2: handmade снежинки от детей
-• Подъезд №3: новогодняя елка с игрушками
-• Подъезды №4-8: тематические украшения в стиле "Зимняя сказка"
-
-Особую благодарность хотим выразить:
-- Семье Петровых (подъезд №3) за организацию
-- Детскому кружку "Творчество" за украшения
-- Управляющей компании за техническую поддержку
-
-31 декабря в 22:00 приглашаем всех на общее празднование у главного входа!`
-    },
-    {
-        id: 2,
-        image: require('../../assets/images/news2.png'),
-        title: "Обновление системы оплаты",
-        time: "2 дня назад",
-        category: "Уведомление",
-        content: "С 1 января вводится новая система онлайн-оплаты коммунальных услуг.",
-        author: "Управляющая компания",
-        likes: 42,
-        comments: 15,
-        fullContent: `Уважаемые жильцы!
-
-С 1 января 2024 года в нашем жилом комплексе вводится полностью обновленная система онлайн-оплаты коммунальных услуг.
-
-Основные изменения:
-1. Новая мобильная платформа
-   - Удобный интерфейс
-   - Быстрая оплата в 2 клика
-   - История всех платежей
-
-2. Отсутствие комиссий
-   - Оплата через Сбербанк - 0%
-   - Оплата картой любого банка - 0%
-   - Перевод с электронных кошельков - 0%
-
-3. Бонусная программа
-   - За каждую оплату начисляются бонусы
-   - 5% кэшбэк первым 100 оплатившим
-   - Накопительная система скидок
-
-4. Новые функции
-   - Автоплатежи по расписанию
-   - Квитанции в электронном виде
-   - Уведомления о новых счетах
-
-Как подключиться:
-1. Скачайте обновленное приложение
-2. Пройдите простую регистрацию
-3. Привяжите лицевой счет
-4. Начните оплачивать без комиссий!
-
-Техподдержка: 8-800-555-35-35 (круглосуточно)`
-    },
-    {
-        id: 3,
-        image: require('../../assets/images/news3.png'),
-        title: "Ремонт лифтов завершен",
-        time: "5 дней назад",
-        category: "Ремонт",
-        content: "Завершен плановый ремонт лифтов в подъездах №2 и №5.",
-        author: "Техническая служба",
-        likes: 18,
-        comments: 3,
-        fullContent: `Информация о завершении ремонта лифтов...`
-    },
-    {
-        id: 4,
-        image: require('../../assets/images/news4.png'),
-        title: "Встреча жильцов 15 декабря",
-        time: "Неделю назад",
-        category: "Собрание",
-        content: "Приглашаем всех жильцов на ежегодное собрание.",
-        author: "Совет дома",
-        likes: 31,
-        comments: 12,
-        fullContent: `Информация о собрании жильцов...`
-    },
-    {
-        id: 5,
-        image: require('../../assets/images/news5.png'),
-        title: "Новогодний корпоратив для детей",
-        time: "2 недели назад",
-        category: "Мероприятия",
-        content: "26 декабря в 16:00 приглашаем детей на новогодний утренник.",
-        author: "Культурный комитет",
-        likes: 56,
-        comments: 21,
-        fullContent: `Информация о новогоднем утреннике...`
-    },
-    {
-        id: 6,
-        image: require('../../assets/images/news6.png'),
-        title: "Изменение графика вывоза мусора",
-        time: "3 недели назад",
-        category: "Уведомление",
-        content: "С понедельника меняется график вывоза мусора.",
-        author: "Управляющая компания",
-        likes: 22,
-        comments: 7,
-        fullContent: `Информация об изменении графика вывоза мусора...`
-    }
-];
+import { fetchNewsById, getFullImageUrl, NewsItem, getRelativeTime } from '@/api/newsApi';
 
 export default function NewsDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const navigation = useNavigation();
+    const [news, setNews] = useState<NewsItem | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [imageError, setImageError] = useState(false);
 
-    // Правильно парсим ID и находим новость
-    const newsId = id ? parseInt(id) : 1;
-    const news = ALL_NEWS.find(item => item.id === newsId) || ALL_NEWS[0];
+    useEffect(() => {
+        loadNews();
+    }, [id]);
 
-    // Устанавливаем заголовок
     useEffect(() => {
         navigation.setOptions({
             title: 'Новость',
@@ -175,9 +59,7 @@ export default function NewsDetailScreen() {
             ),
             headerRight: () => (
                 <Pressable
-                    onPress={() => {
-                        // Логика поделиться
-                    }}
+                    onPress={() => console.log('Поделиться')}
                     style={({ pressed }) => ({
                         marginRight: 16,
                         padding: 8,
@@ -195,160 +77,285 @@ export default function NewsDetailScreen() {
         });
     }, [navigation]);
 
+    const loadNews = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            setImageError(false);
+
+            const newsId = id ? parseInt(id) : 1;
+            const newsData = await fetchNewsById(newsId);
+
+            if (!newsData) {
+                setError('Новость не найдена');
+                return;
+            }
+
+            setNews(newsData);
+        } catch (err: any) {
+            setError(err.message || 'Ошибка загрузки новости');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getRelativeTimeForNews = (newsItem: NewsItem): string => {
+        return newsItem.timeAgo || getRelativeTime(newsItem.updatedAt);
+    };
+
+    const handleImageError = () => {
+        setImageError(true);
+    };
+
+    if (loading) {
+        return (
+            <ScreenContainer scrollable>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#ffffff" />
+                </View>
+            </ScreenContainer>
+        );
+    }
+
+    if (error) {
+        return (
+            <ScreenContainer scrollable>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ThemedText style={{ color: '#ff6b6b', textAlign: 'center', padding: 20 }}>
+                        {error}
+                    </ThemedText>
+                    <TouchableOpacity
+                        style={{
+                            backgroundColor: '#2A2A2A',
+                            paddingHorizontal: 20,
+                            paddingVertical: 10,
+                            borderRadius: 8,
+                            marginTop: 20,
+                        }}
+                        onPress={loadNews}
+                    >
+                        <ThemedText style={{ color: '#DCDCDC' }}>Повторить попытку</ThemedText>
+                    </TouchableOpacity>
+                </View>
+            </ScreenContainer>
+        );
+    }
+
+    if (!news) {
+        return (
+            <ScreenContainer scrollable>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ThemedText>Новость не найдена</ThemedText>
+                </View>
+            </ScreenContainer>
+        );
+    }
+
+    const imageUri = getFullImageUrl(news.imageUrl);
+
     return (
         <ScreenContainer scrollable>
-            {/* Изображение */}
-            <Image
-                source={news.image}
-                style={{
-                    width: '100%',
-                    height: 240,
-                    borderRadius: 12,
-                    marginBottom: 20,
-                }}
-            />
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Изображение */}
+                <View style={{ position: 'relative', marginBottom: 20 }}>
+                    {imageUri ? (
+                        <>
+                            <Image
+                                source={{ uri: imageUri }}
+                                style={{
+                                    width: '100%',
+                                    height: 240,
+                                    borderRadius: 12,
+                                }}
+                                resizeMode="cover"
+                                onError={handleImageError}
+                            />
 
-            {/* Категория */}
-            <View style={{
-                backgroundColor: '#2A2A2A',
-                alignSelf: 'flex-start',
-                paddingHorizontal: 16,
-                paddingVertical: 6,
-                borderRadius: 16,
-                marginBottom: 16
-            }}>
-                <ThemedText style={{
-                    fontSize: 14,
-                    color: '#8A8A8A',
-                    fontFamily: 'Actay'
+                            {imageError && (
+                                <View style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: '#2A2A2A',
+                                    borderRadius: 12,
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}>
+                                    <Ionicons name="image-outline" size={64} color="#8A8A8A" />
+                                    <ThemedText style={{ color: '#8A8A8A', marginTop: 12 }}>
+                                        Изображение недоступно
+                                    </ThemedText>
+                                </View>
+                            )}
+                        </>
+                    ) : (
+                        <View style={{
+                            width: '100%',
+                            height: 240,
+                            backgroundColor: '#2A2A2A',
+                            borderRadius: 12,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                        }}>
+                            <Ionicons name="image-outline" size={64} color="#8A8A8A" />
+                            <ThemedText style={{ color: '#8A8A8A', marginTop: 12 }}>
+                                Нет изображения
+                            </ThemedText>
+                        </View>
+                    )}
+                </View>
+
+                {/* Категория */}
+                <View style={{
+                    backgroundColor: '#2A2A2A',
+                    alignSelf: 'flex-start',
+                    paddingHorizontal: 16,
+                    paddingVertical: 6,
+                    borderRadius: 16,
+                    marginBottom: 16
                 }}>
-                    {news.category}
-                </ThemedText>
-            </View>
-
-            {/* Заголовок */}
-            <ThemedText style={{
-                fontFamily: 'ActayWide-Bold',
-                fontSize: 28,
-                color: '#DCDCDC',
-                marginBottom: 16,
-                lineHeight: 34
-            }}>
-                {news.title}
-            </ThemedText>
-
-            {/* Информация о новости */}
-            <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 24,
-                paddingBottom: 16,
-                borderBottomWidth: 1,
-                borderBottomColor: '#2A2A2A'
-            }}>
-                <View>
-                    <ThemedText style={{
-                        fontSize: 16,
-                        color: '#8A8A8A',
-                        fontFamily: 'Actay',
-                        marginBottom: 4
-                    }}>
-                        {news.time}
-                    </ThemedText>
                     <ThemedText style={{
                         fontSize: 14,
-                        color: '#DCDCDC',
+                        color: '#8A8A8A',
                         fontFamily: 'Actay'
                     }}>
-                        Автор: {news.author}
+                        {news.category}
                     </ThemedText>
                 </View>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
-                    <TouchableOpacity style={{ alignItems: 'center' }}>
-                        <Ionicons name="heart-outline" size={24} color="#8A8A8A" />
-                        <ThemedText style={{ fontSize: 12, color: '#8A8A8A', marginTop: 4 }}>
-                            {news.likes}
-                        </ThemedText>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={{ alignItems: 'center' }}>
-                        <Ionicons name="chatbubble-outline" size={24} color="#8A8A8A" />
-                        <ThemedText style={{ fontSize: 12, color: '#8A8A8A', marginTop: 4 }}>
-                            {news.comments}
-                        </ThemedText>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Контент */}
-            <View style={{ marginBottom: 32 }}>
+                {/* Заголовок */}
                 <ThemedText style={{
-                    fontFamily: 'Actay',
-                    fontSize: 16,
+                    fontFamily: 'ActayWide-Bold',
+                    fontSize: 28,
                     color: '#DCDCDC',
-                    lineHeight: 24,
+                    marginBottom: 16,
+                    lineHeight: 34
                 }}>
-                    {news.fullContent || news.content}
+                    {news.title}
                 </ThemedText>
-            </View>
 
-            {/* Кнопки действий */}
-            <View style={{ flexDirection: 'row', gap: 12, marginBottom: 40 }}>
-                <TouchableOpacity
-                    style={{
-                        flex: 1,
-                        backgroundColor: '#2A2A2A',
-                        paddingVertical: 12,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        flexDirection: 'row',
-                        justifyContent: 'center',
-                        gap: 8
-                    }}
-                >
-                    <Ionicons name="heart-outline" size={20} color="#DCDCDC" />
+                {/* Информация о новости */}
+                <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: 24,
+                    paddingBottom: 16,
+                    borderBottomWidth: 1,
+                    borderBottomColor: '#2A2A2A'
+                }}>
+                    <View>
+                        <ThemedText style={{
+                            fontSize: 16,
+                            color: '#8A8A8A',
+                            fontFamily: 'Actay',
+                            marginBottom: 4
+                        }}>
+                            {getRelativeTimeForNews(news)}
+                        </ThemedText>
+                        <ThemedText style={{
+                            fontSize: 14,
+                            color: '#DCDCDC',
+                            fontFamily: 'Actay'
+                        }}>
+                            Автор: {news.author}
+                        </ThemedText>
+                    </View>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+                        <TouchableOpacity style={{ alignItems: 'center' }}>
+                            <Ionicons name="heart-outline" size={24} color="#8A8A8A" />
+                            <ThemedText style={{ fontSize: 12, color: '#8A8A8A', marginTop: 4 }}>
+                                {news.likesCount}
+                            </ThemedText>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{ alignItems: 'center' }}>
+                            <Ionicons name="chatbubble-outline" size={24} color="#8A8A8A" />
+                            <ThemedText style={{ fontSize: 12, color: '#8A8A8A', marginTop: 4 }}>
+                                {news.commentsCount}
+                            </ThemedText>
+                        </TouchableOpacity>
+
+                        <View style={{ alignItems: 'center' }}>
+                            <Ionicons name="eye-outline" size={24} color="#8A8A8A" />
+                            <ThemedText style={{ fontSize: 12, color: '#8A8A8A', marginTop: 4 }}>
+                                {news.viewCount}
+                            </ThemedText>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Контент */}
+                <View style={{ marginBottom: 32 }}>
                     <ThemedText style={{
+                        fontFamily: 'Actay',
                         fontSize: 16,
                         color: '#DCDCDC',
-                        fontFamily: 'Actay'
+                        lineHeight: 24,
                     }}>
-                        Нравится
+                        {news.fullContent || news.content}
                     </ThemedText>
-                </TouchableOpacity>
+                </View>
 
-                <TouchableOpacity
-                    style={{
-                        flex: 1,
-                        backgroundColor: '#2A2A2A',
-                        paddingVertical: 12,
-                        borderRadius: 8,
-                        alignItems: 'center',
-                        flexDirection: 'row',
-                        justifyContent: 'center',
-                        gap: 8
-                    }}
-                >
-                    <Ionicons name="chatbubble-outline" size={20} color="#DCDCDC" />
-                    <ThemedText style={{
-                        fontSize: 16,
-                        color: '#DCDCDC',
-                        fontFamily: 'Actay'
-                    }}>
-                        Комментировать
-                    </ThemedText>
-                </TouchableOpacity>
-            </View>
+                {/* Кнопки действий */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 40 }}>
+                    <TouchableOpacity
+                        style={{
+                            flex: 1,
+                            backgroundColor: '#2A2A2A',
+                            paddingVertical: 12,
+                            borderRadius: 8,
+                            alignItems: 'center',
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            gap: 8
+                        }}
+                        onPress={() => console.log('Лайк')}
+                    >
+                        <Ionicons name="heart-outline" size={20} color="#DCDCDC" />
+                        <ThemedText style={{
+                            fontSize: 16,
+                            color: '#DCDCDC',
+                            fontFamily: 'Actay'
+                        }}>
+                            Нравится
+                        </ThemedText>
+                    </TouchableOpacity>
 
-            {/* Кнопка поделиться */}
-            <ThemedButton
-                title="Поделиться новостью"
-                style={{ marginBottom: 40 }}
-                onPress={() => {
-                    // Логика поделиться
-                }}
-            />
+                    <TouchableOpacity
+                        style={{
+                            flex: 1,
+                            backgroundColor: '#2A2A2A',
+                            paddingVertical: 12,
+                            borderRadius: 8,
+                            alignItems: 'center',
+                            flexDirection: 'row',
+                            justifyContent: 'center',
+                            gap: 8
+                        }}
+                        onPress={() => console.log('Комментарий')}
+                    >
+                        <Ionicons name="chatbubble-outline" size={20} color="#DCDCDC" />
+                        <ThemedText style={{
+                            fontSize: 16,
+                            color: '#DCDCDC',
+                            fontFamily: 'Actay'
+                        }}>
+                            Комментировать
+                        </ThemedText>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Кнопка поделиться */}
+                <ThemedButton
+                    title="Поделиться новостью"
+                    style={{ marginBottom: 40 }}
+                    onPress={() => console.log('Поделиться новостью')}
+                />
+            </ScrollView>
         </ScreenContainer>
     );
 }
