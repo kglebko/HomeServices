@@ -1,21 +1,20 @@
-import { ScreenContainer } from "@/components/ScreenContainer";
 import { ForgotPassword as styles } from "@/components/ForgotPassword";
+import { ScreenContainer } from "@/components/ScreenContainer";
 import { apiService } from "@/services/api";
 import { storage } from "@/services/storage";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-  View,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Keyboard,
-  Alert,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
+  View
 } from "react-native";
 
 export default function ForgotPasswordScreen() {

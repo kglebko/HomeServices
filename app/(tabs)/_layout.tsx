@@ -2,10 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 
 
-import { HapticTab } from '@/components/haptic-tab';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
 
 export default function TabLayout() {
   return (
@@ -17,7 +13,7 @@ export default function TabLayout() {
         tabBarLabelStyle: {
           fontFamily: 'Actay',
           fontSize: 11,
-    },
+        },
       }}
       >
 

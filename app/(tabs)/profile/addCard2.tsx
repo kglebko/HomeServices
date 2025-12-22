@@ -1,9 +1,10 @@
 import { AddCardScreenStyles as styles } from "@/components/AddCardScreenStyles";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { apiService } from "@/services/api";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {KeyboardAvoidingView,Platform,ScrollView,Text,TextInput,TouchableOpacity,View} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
 export default function AddCardScreen() {
   const router = useRouter();
@@ -40,17 +41,69 @@ export default function AddCardScreen() {
     setExpiryDate(formatted);
   };
 
+  // Валидация данных карты
+  const validateCardData = (): string | null => {
+    const cleanedCardNumber = cardNumber.replace(/\s+/g, '');
+    if (cleanedCardNumber.length < 13 || cleanedCardNumber.length > 19) {
+      return "Номер карты должен содержать от 13 до 19 цифр";
+    }
+
+    if (!expiryDate || expiryDate.length !== 5) {
+      return "Введите срок действия карты (MM/YY)";
+    }
+
+    const [month, year] = expiryDate.split('/');
+    const monthNum = parseInt(month, 10);
+    if (monthNum < 1 || monthNum > 12) {
+      return "Неверный месяц";
+    }
+
+    if (!cardholderName || cardholderName.trim().length < 2) {
+      return "Введите имя держателя карты";
+    }
+
+    if (!cvv || cvv.length !== 3) {
+      return "CVV должен содержать 3 цифры";
+    }
+
+    return null;
+  };
+
   // Обработка добавления карты
-  const handleAddCard = () => {
-    // Здесь будет логика добавления карты
-    console.log("Добавление карты:", {
-      cardNumber,
-      expiryDate,
-      cardholderName,
-      cvv,
-    });
-    // После успешного добавления можно вернуться назад
-    router.back();
+  const handleAddCard = async () => {
+    const validationError = validateCardData();
+    if (validationError) {
+      Alert.alert("Ошибка", validationError);
+      return;
+    }
+
+    try {
+      // Извлекаем месяц и год из формата MM/YY
+      const [expiryMonth, expiryYear] = expiryDate.split('/');
+      const cleanedCardNumber = cardNumber.replace(/\s+/g, '');
+
+      const response = await apiService.addCard({
+        cardNumber: cleanedCardNumber,
+        expiryMonth,
+        expiryYear,
+        cardholderName: cardholderName.trim().toUpperCase(),
+        cvv,
+      });
+
+      if (response.success) {
+        Alert.alert("Успешно", "Карта успешно добавлена", [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ]);
+      } else {
+        Alert.alert("Ошибка", response.message || "Не удалось добавить карту");
+      }
+    } catch (error: any) {
+      console.error('Error adding card:', error);
+      Alert.alert("Ошибка", error.message || "Не удалось добавить карту. Проверьте подключение к серверу.");
+    }
   };
 
   return (
@@ -155,7 +208,7 @@ export default function AddCardScreen() {
               (!cardNumber || !expiryDate || !cardholderName || !cvv) &&
                 styles.addButtonDisabled,
             ]}
-            onPress={() => router.push("/profile/enterCode")}
+            onPress={handleAddCard}
             disabled={!cardNumber || !expiryDate || !cardholderName || !cvv}
          >
             <Text style={styles.ButtonText}>Добавить карту</Text>

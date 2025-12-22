@@ -5,6 +5,8 @@ const USER_KEY = '@user_data';
 const CONTACT_KEY = '@registration_contact';
 const RESET_PASSWORD_CONTACT_KEY = '@reset_password_contact';
 const RESET_PASSWORD_CODE_KEY = '@reset_password_code';
+const QR_CODE_DATA_KEY = '@qr_code_data';
+const ACCOUNT_NUMBER_KEY = '@account_number';
 
 export const storage = {
   /**
@@ -168,6 +170,66 @@ export const storage = {
   async isAuthenticated(): Promise<boolean> {
     const token = await this.getToken();
     return token !== null;
+  },
+
+  /**
+   * Сохраняет данные QR-кода
+   */
+  async saveQRCodeData(data: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(QR_CODE_DATA_KEY, data);
+    } catch (error) {
+      console.error('Error saving QR code data:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получает сохраненные данные QR-кода
+   */
+  async getQRCodeData(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(QR_CODE_DATA_KEY);
+    } catch (error) {
+      console.error('Error getting QR code data:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Очищает сохраненные данные QR-кода
+   */
+  async clearQRCodeData(): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(QR_CODE_DATA_KEY);
+      await AsyncStorage.removeItem(ACCOUNT_NUMBER_KEY);
+    } catch (error) {
+      console.error('Error clearing QR code data:', error);
+    }
+  },
+
+  /**
+   * Сохраняет лицевой счет
+   */
+  async saveAccountNumber(accountNumber: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(ACCOUNT_NUMBER_KEY, accountNumber);
+    } catch (error) {
+      console.error('Error saving account number:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Получает сохраненный лицевой счет
+   */
+  async getAccountNumber(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(ACCOUNT_NUMBER_KEY);
+    } catch (error) {
+      console.error('Error getting account number:', error);
+      return null;
+    }
   },
 };
 

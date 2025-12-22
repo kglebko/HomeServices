@@ -5,18 +5,19 @@ import { apiService } from '@/services/api';
 import { storage } from '@/services/storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  ActivityIndicator,
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from 'react-native';
 
 export default function RegistrationScreen() {
@@ -24,18 +25,45 @@ export default function RegistrationScreen() {
   const [contact, setContact] = useState('');
   const [isEmail, setIsEmail] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const contactInputRef = useRef<TextInput>(null);
 
-  // Моковые данные жильца (в реальном приложении будут приходить из QR-кода или API)
-  const residentData = {
+  // Данные жильца (загружаются из QR-кода или API)
+  const [residentData, setResidentData] = useState({
     firstName: 'Константин',
     lastName: 'Глебко',
     patronymic: 'Романович',
     fullName: 'Глебко Константин Романович', // Для отображения
     address: 'ул. Пономаренко 54-54',
-    accountNumber: '2093350054',
+    accountNumber: '',
     residentsCount: '4'
-  };
+  });
+
+  // Загружаем лицевой счет из QR-кода при монтировании
+  useEffect(() => {
+    const loadAccountNumber = async () => {
+      try {
+        const accountNumber = await storage.getAccountNumber();
+        if (accountNumber) {
+          // Обновляем лицевой счет в данных
+          setResidentData(prev => ({
+            ...prev,
+            accountNumber: accountNumber
+          }));
+
+          // Здесь можно сделать API запрос для получения данных жильца по лицевому счету
+          // Например: const residentInfo = await apiService.getResidentByAccount(accountNumber);
+          // if (residentInfo) { setResidentData(residentInfo); }
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки лицевого счета:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadAccountNumber();
+  }, []);
 
   const dismissKeyboard = () => {
     Keyboard.dismiss();
@@ -103,7 +131,7 @@ export default function RegistrationScreen() {
         setTimeout(() => {
           Alert.alert(
             "Код отправлен",
-            `Код подтверждения отправлен на ${isEmail ? 'email' : 'телефон'}: ${contact}\n\nПримечание: В режиме разработки код будет показан в консоли сервера.`
+            `Код подтверждения отправлен на ${isEmail ? 'email' : 'телефон'}: ${contact}`
           );
         }, 500);
       } else {
@@ -159,6 +187,19 @@ export default function RegistrationScreen() {
     }
   };
 
+  if (isLoadingData) {
+    return (
+      <ScreenContainer>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#D64105" />
+          <Text style={{ color: '#fff', marginTop: 16, fontFamily: 'Actay' }}>
+            Загрузка данных...
+          </Text>
+        </View>
+      </ScreenContainer>
+    );
+  }
+
   return (
     <ScreenContainer>
       <ScrollView  showsVerticalScrollIndicator={false}  >
@@ -177,7 +218,7 @@ export default function RegistrationScreen() {
               {/* Карточка с данными жильца */}
               <View style={styles.dataCard}>
                 {/* ФИО */}
-                <View style={styles.dataRow}>
+                <View style={styles.nameFieldRow}>
                   <View style={styles.dataLabelContainer}>
                     <Ionicons name="person" size={16} color="#D64105" />
                     <Text style={styles.dataLabel}>ФИО:</Text>
@@ -186,7 +227,7 @@ export default function RegistrationScreen() {
                 </View>
 
                 {/* Адрес */}
-                <View style={styles.dataRow}>
+                <View style={styles.nameFieldRow}>
                   <View style={styles.dataLabelContainer}>
                     <Ionicons name="home" size={16} color="#D64105" />
                     <Text style={styles.dataLabel}>Адрес:</Text>
@@ -195,12 +236,14 @@ export default function RegistrationScreen() {
                 </View>
 
                 {/* Лицевой счет */}
-                <View style={styles.dataRow}>
-                  <View style={styles.dataLabelContainer}>
+                <View style={styles.nameFieldRow}>
+                <View style={styles.dataLabelContainer}>
                     <Ionicons name="card" size={16} color="#D64105" />
                     <Text style={styles.dataLabel}>Лицевой счет:</Text>
-                  </View>
-                  <Text style={styles.dataValue}>{residentData.accountNumber}</Text>
+                </View>
+                  <Text style={styles.dataValue}>
+                    {residentData.accountNumber || 'Не указан'}
+                  </Text>
                 </View>
 
                 {/* Кол-во проживающих */}

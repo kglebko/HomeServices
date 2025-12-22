@@ -98,7 +98,7 @@ export default function ProfileScreen() {
   // Форматирование имени (объединение имени, фамилии и отчества)
   const getDisplayName = () => {
     if (!userData?.firstName && !userData?.lastName) return "Пользователь";
-    const parts = [userData.lastName, userData.firstName, userData.patronymic].filter(Boolean);
+    const parts = [userData.lastName, userData.firstName].filter(Boolean);
     return parts.length > 0 ? parts.join(' ') : "Пользователь";
   };
 

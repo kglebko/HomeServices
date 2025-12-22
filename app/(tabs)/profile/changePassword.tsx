@@ -78,10 +78,10 @@ export default function ChangePasswordScreen() {
         router.back();
         
       } else {
-        Alert.alert("Ошибка", response.message || "Не удалось изменить пароль");
+        Alert.alert("Ошибка", "Не удалось изменить пароль");
       }
     } catch (error: any) {
-      Alert.alert("Ошибка", error.message || "Не удалось изменить пароль. Проверьте правильность старого пароля.");
+      Alert.alert("Ошибка", "Не удалось изменить пароль. Проверьте правильность старого пароля.");
     } finally {
       setIsLoading(false);
     }

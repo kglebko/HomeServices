@@ -91,7 +91,7 @@ export default function CodeVerificationScreen() {
         setCode(["", "", "", ""]);
         inputsRef.current[0]?.focus();
       } catch (error: any) {
-        Alert.alert("Ошибка", error.message || "Не удалось отправить код. Попробуйте еще раз.");
+        Alert.alert("Ошибка", "Не удалось отправить код. Попробуйте еще раз.");
       }
     }
   };
@@ -117,7 +117,7 @@ export default function CodeVerificationScreen() {
         inputsRef.current[0]?.focus();
       }
     } catch (error: any) {
-      Alert.alert("Ошибка!", error.message || "Неверный код подтверждения");
+      Alert.alert("Ошибка!", "Неверный код подтверждения");
       setCode(["", "", "", ""]);
       inputsRef.current[0]?.focus();
     }

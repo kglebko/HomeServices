@@ -1,6 +1,7 @@
 // screens/QRScannerScreen.tsx
+import { storage } from '@/services/storage';
 import { Ionicons } from '@expo/vector-icons';
-import { Camera, useCameraPermissions } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -28,7 +29,7 @@ export default function QRScannerScreen() {
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   
   // Реф для камеры
-  const cameraRef = useRef<Camera | null>(null);
+  const cameraRef = useRef<any>(null);
 
   // Используем хук для разрешений
   const [permission, requestPermission] = useCameraPermissions();
@@ -86,11 +87,23 @@ export default function QRScannerScreen() {
     
     console.log(`QR-код сканирован! Тип: ${type}, Данные: ${data}`);
     
-    // Обработка данных QR-кода
-    processQRCodeData(data);
+    // Обработка данных QR-кода (async функция)
+    processQRCodeData(data).catch((error) => {
+      console.error('Ошибка обработки QR-кода:', error);
+      Alert.alert("Ошибка", "Не удалось обработать QR-код");
+      setScanned(false);
+    });
   };
 
-  const processQRCodeData = (data: string) => {
+  // Валидация кода - должен содержать ровно 10 цифр
+  const validateCode = (data: string): boolean => {
+    // Извлекаем только цифры из строки
+    const digits = data.replace(/\D/g, '');
+    // Проверяем, что ровно 10 цифр
+    return digits.length === 10;
+  };
+
+  const processQRCodeData = async (data: string) => {
     try {
       // Проверяем, является ли это URL
       if (data.startsWith('http://') || data.startsWith('https://')) {
@@ -101,62 +114,83 @@ export default function QRScannerScreen() {
             { text: "Нет", onPress: () => setScanned(false), style: "cancel" },
             { text: "Да", onPress: () => {
               Linking.openURL(data);
-              setTimeout(() => router.back(), 1000);
+              setTimeout(() => setScanned(false), 1000);
             }}
           ]
         );
-      } else if (data.includes('bill') || data.includes('receipt') || data.includes('payment')) {
-        // Пример обработки QR-кода жировки
+        return;
+      }
+
+      // Валидация: код должен содержать ровно 10 цифр
+      if (!validateCode(data)) {
         Alert.alert(
-          "Жировка найдена!",
-          "QR-код успешно отсканирован. Загружаем информацию...",
+          "Неверный формат кода",
+          "Код должен содержать ровно 10 цифр. Пожалуйста, отсканируйте QR-код с жировки еще раз.",
           [
             { 
               text: "OK", 
-              onPress: () => {
-                // Здесь будет переход к деталям жировки
-                // Например: router.push(`/bill/${data}`);
-                // А пока просто возвращаемся назад
-                router.back();
-              }
-            }
-          ]
-        );
-      } else {
-        // Просто показываем данные
-        Alert.alert(
-          "QR-код отсканирован",
-          `Данные: ${data.substring(0, 100)}${data.length > 100 ? '...' : ''}`,
-          [
-            { 
-              text: "Сканировать ещё", 
               onPress: () => setScanned(false) 
-            },
-            { 
-              text: "Готово", 
-              onPress: () => router.back() 
             }
           ]
         );
+        return;
       }
+
+      // Код валиден - извлекаем лицевой счет (10 цифр) и сохраняем
+      const accountNumber = data.replace(/\D/g, ''); // Извлекаем только цифры
+      
+      try {
+        await storage.saveQRCodeData(data);
+        // Сохраняем лицевой счет отдельно для удобства
+        await storage.saveAccountNumber(accountNumber);
+      } catch (error) {
+        console.log('Ошибка сохранения данных QR-кода:', error);
+      }
+      
+      Alert.alert(
+        "QR-код отсканирован!",
+        "Код успешно распознан. Переходим к регистрации...",
+        [
+          { 
+            text: "OK", 
+            onPress: () => {
+              // Переходим к экрану регистрации
+              router.push('/login/registration');
+            }
+          }
+        ]
+      );
     } catch (error) {
       Alert.alert("Ошибка", "Не удалось обработать QR-код");
       setScanned(false);
     }
   };
 
-  const handleManualEntry = () => {
+  const handleManualEntry = async () => {
     Alert.prompt(
       "Введите код вручную",
-      "Введите номер жировки или данные из QR-кода:",
+      "Введите код из QR-кода (10 цифр):",
       [
         { text: "Отмена", style: "cancel" },
         { 
           text: "OK", 
-          onPress: (text?: string) => {
-            if (text && text.trim().length > 0) {
-              processQRCodeData(text);
+          onPress: async (text?: string) => {
+            if (!text || text.trim().length === 0) {
+              Alert.alert("Ошибка", "Пожалуйста, введите код");
+              return;
             }
+
+            // Валидация: код должен содержать ровно 10 цифр
+            if (!validateCode(text)) {
+              Alert.alert(
+                "Неверный формат кода",
+                "Код должен содержать ровно 10 цифр. Пожалуйста, проверьте введенные данные."
+              );
+              return;
+            }
+
+            // Код валиден - обрабатываем
+            await processQRCodeData(text);
           }
         }
       ],
@@ -208,7 +242,7 @@ export default function QRScannerScreen() {
 
   return (
     <View style={styles.container}>
-      <Camera
+      <CameraView
         ref={cameraRef}
         style={StyleSheet.absoluteFillObject}
         facing={facing}
@@ -216,8 +250,6 @@ export default function QRScannerScreen() {
         // Настройки камеры для лучшего сканирования
         autofocus="on"
         zoom={0}
-        whiteBalance="auto"
-        ratio="16:9"
       />
       
       {/* Overlay с рамкой для сканирования */}
@@ -521,3 +553,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

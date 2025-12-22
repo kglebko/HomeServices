@@ -29,16 +29,18 @@ export const Registration = StyleSheet.create({
     backgroundColor: "#2b2b2b",
     borderRadius: 16,
     padding: 24,
-    marginBottom: 30,
+    marginBottom: 20,
     borderWidth: 1,
     borderColor: "#3A3A3A",
-    paddingBottom:0,
+    paddingBottom:10,
+    paddingTop:15,
   },
   dataRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "baseline",
     marginBottom: 20,
+    
   },
   dataLabelContainer: {
     flexDirection: "row",
@@ -61,18 +63,12 @@ export const Registration = StyleSheet.create({
     textAlign: "left",
     lineHeight: 22,
   },
-  nameField: {
-    backgroundColor: "#1E1E1E",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#3A3A3A",
-  },
+ 
   nameFieldRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 10,
   },
   separator: {
     height: 1,
@@ -346,5 +342,75 @@ export const Registration = StyleSheet.create({
     color: "#F44336",
   },
  
+  // Стили для модальных окон
+  modalOverlay: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    padding: 20,
+  },
+  modalContainer: {
+    width: "100%",
+    maxWidth: 400,
+    maxHeight: "70%",
+    backgroundColor: "#2b2b2b",
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#3A3A3A",
+  },
+  modalTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontFamily: "Actay-Bold",
+    flex: 1,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalContent: {
+    maxHeight: "70%",
+  },
+  modalText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Actay",
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  modalSectionTitle: {
+    color: "#D64105",
+    fontSize: 16,
+    fontFamily: "Actay-Bold",
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  modalList: {
+    marginLeft: 16,
+    marginBottom: 12,
+  },
+  modalListItem: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Actay",
+    lineHeight: 20,
+    marginBottom: 6,
+  },
 
 });

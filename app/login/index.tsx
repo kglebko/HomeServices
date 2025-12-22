@@ -6,15 +6,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useRef, useState } from "react";
 import {
-  Alert,
-  Keyboard,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Alert,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
 
 export default function LoginScreen() {
@@ -119,7 +119,6 @@ export default function LoginScreen() {
         
         // Успешный вход - переходим на главную
         router.replace("/(tabs)");
-        Alert.alert("Успешно", "Вы вошли в аккаунт");
       } else {
         Alert.alert("Ошибка", "Неверный логин или пароль");
       }
@@ -316,3 +315,4 @@ export default function LoginScreen() {
     </ScreenContainer>
   );
 }
+

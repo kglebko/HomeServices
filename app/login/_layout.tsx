@@ -19,20 +19,18 @@ export default function LoginLayout() {
               <Ionicons name="chevron-back" size={24} color="#D64105" />
             </Pressable>
           ) : null,
-
-
       }}
     >
-
-    <Stack.Screen name="index"/>
-    <Stack.Screen name="scanQR"/>
-  <Stack.Screen name="QRScannerScreen"/>
-  <Stack.Screen name="enterCode"/>
-   <Stack.Screen name="enterCode2"/>
-    <Stack.Screen name="forgotPassword"/>
-     <Stack.Screen name="registration"/> 
+      <Stack.Screen name="index"/>
+      <Stack.Screen name="scanQR"/>
+      <Stack.Screen name="QRScannerScreen"/>
+      <Stack.Screen name="enterCode"/>
+      <Stack.Screen name="enterCode2"/>
+      <Stack.Screen name="forgotPassword"/>
+      <Stack.Screen name="registration"/> 
+      <Stack.Screen name="complete"/>
       <Stack.Screen name="changeForgotPassword"/>
     </Stack>
-    
   );
 }
+

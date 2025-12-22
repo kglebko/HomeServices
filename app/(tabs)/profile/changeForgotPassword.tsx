@@ -2,19 +2,19 @@ import { ChangePasswordScreenStyles as styles } from "@/components/ChangePasswor
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { apiService } from "@/services/api";
 import { storage } from "@/services/storage";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    Alert,
-    Keyboard,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 
 export default function ChangePasswordScreen() {

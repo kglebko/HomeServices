@@ -3,14 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
+  ScrollView,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  View,
-  ActivityIndicator,
-  ScrollView
+  View
 } from "react-native";
-import { StyleSheet } from "react-native";
 
 export default function ScanQRScreen() {
   const router = useRouter();
@@ -22,15 +22,14 @@ export default function ScanQRScreen() {
 
   // Запрос разрешений на камеру и переход к сканеру
   const requestCameraPermission = async () => {
-    // Здесь будет запрос разрешения на камеру
-    // Пока просто переходим к экрану сканера
+    // Переходим к экрану сканера QR-кода
     setIsScanning(true);
     
-    // Имитация задержки для показа индикатора
+    // Небольшая задержка для плавного перехода
     setTimeout(() => {
       setIsScanning(false);
-      router.push('/login/registration');
-    }, 500);
+      router.push('/login/QRScannerScreen');
+    }, 300);
   };
 
   // Переход к обычному логину
@@ -329,3 +328,4 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
 });
+
