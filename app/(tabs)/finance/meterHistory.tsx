@@ -1,27 +1,22 @@
-import React from 'react';
-import { View } from 'react-native';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedCard } from '@/components/themed-card';
 import { ScreenContainer } from '@/components/ScreenContainer';
+import { ThemedCard } from '@/components/themed-card';
+import { ThemedText } from '@/components/themed-text';
+import React, { useEffect, useState } from 'react';
+import { Platform, View } from 'react-native';
 
 type MeterMonthData = {
   month: string;
-  meters: number[]; 
+  meters: number[];
 };
 
 function MeterCard({ data }: { data: MeterMonthData }) {
   return (
-    <ThemedCard style={{ marginBottom: 16, padding: 16}}>
-      <ThemedText type="paymentData" style={{ marginBottom: 12}}>
+    <ThemedCard style={{ marginBottom: 16, padding: 16 }}>
+      <ThemedText type="paymentData" style={{ marginBottom: 12 }}>
         {data.month}
       </ThemedText>
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-        }}
-      >
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
         {data.meters.map((value, index) => (
           <View key={index} style={{ alignItems: 'center', flex: 1 }}>
             <ThemedText type="littleLabel">{`Счётчик ${index + 1}`}</ThemedText>
@@ -34,20 +29,42 @@ function MeterCard({ data }: { data: MeterMonthData }) {
 }
 
 export default function MeterHistory() {
-  const meterData: MeterMonthData[] = [
-    { month: 'Октябрь', meters: [990, 970, 940, 910] },
-    { month: 'Сентябрь', meters: [985, 962, 935, 905] },
-    { month: 'Август', meters: [978, 954, 928, 898] },
-    { month: 'Июль', meters: [972, 945, 920, 890] },
-    { month: 'Июнь', meters: [965, 936, 911, 880] },
-    { month: 'Май', meters: [959, 928, 903, 872] },
-    { month: 'Апрель', meters: [951, 918, 893, 862] },
-    { month: 'Март', meters: [943, 907, 883, 852] },
-    { month: 'Февраль', meters: [934, 897, 873, 842] },
-    { month: 'Январь', meters: [924, 885, 861, 831] },
-    { month: 'Декабрь', meters: [915, 873, 851, 820] },
-    { month: 'Ноябрь', meters: [905, 860, 840, 810] },
-  ];
+  const [meterData, setMeterData] = useState<MeterMonthData[]>([]);
+  const userId = 1;
+
+  const baseUrl = Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080'
+      : 'http://192.168.31.18:8080';
+      //: 'http://172.20.10.3:8080';
+    
+
+  useEffect(() => {
+    fetch(`${baseUrl}/api/finance/meters/${userId}`)
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP error');
+        return res.json();
+      })
+      .then((data) => {
+        const formatted = data.map((item: any) => {
+          const month = new Date(item.readingMonth)
+            .toLocaleString('ru-RU', { month: 'long', year: 'numeric' });
+
+          return {
+            month: month.charAt(0).toUpperCase() + month.slice(1),
+            meters: [
+              item.meter1,
+              item.meter2,
+              item.meter3,
+              item.meter4,
+            ],
+          };
+        });
+
+        setMeterData(formatted);
+      })
+      .catch(err => console.error('Fetch error:', err));
+  }, []);
+
 
   return (
     <ScreenContainer scrollable>

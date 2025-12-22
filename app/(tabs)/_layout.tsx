@@ -51,7 +51,7 @@ export default function TabLayout() {
         <Tabs.Screen
             name="chats"
             options={{
-                title: 'Чаты',
+                title: 'Канал',
                 headerShown: false,
                 tabBarIcon: ({ color, size }) => (
                     <Ionicons name="chatbubble-outline" size={size} color={color} />

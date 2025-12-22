@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Image, Pressable } from 'react-native';
+import { View, Image, Pressable, Platform } from 'react-native';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedText } from '@/components/themed-text';
@@ -11,17 +11,15 @@ import { TimeSlotsSelector } from '@/components/request/TimeSlotsSelector';
 import { CommentInputWithAttach } from '@/components/request/CommentInputWithAttach';
 import { SystemAlert } from '@/components/SystemAlert';
 
-// Функция для получения текста диапазона недели
+
 const getWeekRangeText = () => {
     const today = new Date();
     const currentDay = today.getDay();
 
-    // Находим понедельник текущей недели
     const monday = new Date(today);
     const daysToMonday = currentDay === 0 ? 1 : (currentDay === 1 ? 0 : 1 - currentDay);
     monday.setDate(today.getDate() + daysToMonday);
 
-    // Находим пятницу текущей недели (только рабочие дни)
     const friday = new Date(monday);
     friday.setDate(monday.getDate() + 4);
 
@@ -36,7 +34,13 @@ const getWeekRangeText = () => {
 
 export default function ServiceRequestScreen() {
     const navigation = useNavigation();
-    const { title } = useLocalSearchParams<{ title?: string }>();
+    const { title, serviceId, price, startTime: paramStartTime, endTime: paramEndTime } = useLocalSearchParams<{
+        title?: string,
+        serviceId?: string,
+        price?: string,
+        startTime?: string,
+        endTime?: string
+    }>();
 
     const [day, setDay] = useState<string | null>(null);
     const [time, setTime] = useState<string | null>(null);
@@ -46,17 +50,15 @@ export default function ServiceRequestScreen() {
         time: false,
         comment: false
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Состояние для алерта
     const [showAlert, setShowAlert] = useState(false);
     const [alertTitle, setAlertTitle] = useState('');
     const [alertMessage, setAlertMessage] = useState('');
 
-    // Получаем текст диапазона недели
     const weekRangeText = useMemo(() => getWeekRangeText(), []);
 
-    // Устанавливаем заголовок при монтировании
-    useEffect(() => {
+        useEffect(() => {
         navigation.setOptions({
             title: 'Оформление заявки',
             headerStyle: {
@@ -112,7 +114,6 @@ export default function ServiceRequestScreen() {
             if (newErrors.comment) errorMessage += '•  Комментарий\n';
             errorMessage += '\nПосле заполнения нажмите "Оформить заявку" еще раз';
 
-            // Показываем наш кастомный алерт
             setAlertTitle('Не все поля заполнены');
             setAlertMessage(errorMessage);
             setShowAlert(true);
@@ -122,15 +123,124 @@ export default function ServiceRequestScreen() {
         return true;
     };
 
-    const handleSubmit = () => {
-        if (validateForm()) {
-            // Здесь можно добавить логику отправки данных
-            console.log('Отправка данных:', { day, time, comment });
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
 
-            // Переход на экран подтверждения
-            router.push('/request-success' as any);
+        setIsSubmitting(true);
+
+        try {
+            // Преобразуем день недели в дату
+            const convertDayToDate = (dayOfWeek: string) => {
+                const daysMap = {
+                    'Пн': 1, 'Вт': 2, 'Ср': 3, 'Чт': 4, 'Пт': 5
+                };
+
+                const today = new Date();
+                const currentDay = today.getDay(); // 0=Вс, 1=Пн, ..., 6=Сб
+
+                let targetDay = daysMap[dayOfWeek] || 1;
+
+                // Рассчет дней до целевого дня
+                let daysToAdd = 0;
+                if (currentDay === 0) {
+                    daysToAdd = targetDay; // Вс → Пн=1, Вт=2 и т.д.
+                } else if (currentDay === targetDay) {
+                    daysToAdd = 7; // Перенос на след. неделю
+                } else if (currentDay < targetDay) {
+                    daysToAdd = targetDay - currentDay; // На этой неделе
+                } else {
+                    daysToAdd = (7 - currentDay) + targetDay; // На след. неделе
+                }
+
+                const targetDate = new Date(today);
+                targetDate.setDate(today.getDate() + daysToAdd);
+                return targetDate;
+            };
+
+            // Исправление №1: Функция для добавления ведущего нуля к времени
+            const fixTimeFormat = (timeStr: string) => {
+                if (!timeStr) return "00:00:00";
+
+                // Убираем диапазон (если "10:00 – 12:00" → "10:00")
+                let cleanTime = timeStr.split('–')[0]?.trim() || timeStr;
+
+                // Разделяем часы и минуты
+                const parts = cleanTime.split(':');
+                if (parts.length < 2) return "00:00:00";
+
+                // Добавляем ведущий ноль к часам если нужно
+                let hours = parts[0];
+                if (hours.length === 1) hours = '0' + hours; // "9" → "09"
+
+                const minutes = parts[1] || '00';
+
+                return `${hours}:${minutes}:00`; // Добавляем секунды
+            };
+
+            const selectedDate = convertDayToDate(day!);
+
+            // Исправление №2: Используем функцию fixTimeFormat
+            const selectedStartTime = fixTimeFormat(time!);
+
+            // Рассчитываем время окончания (добавляем 2 часа)
+            const startParts = selectedStartTime.split(':');
+            const startHours = parseInt(startParts[0]);
+            let endHours = startHours + 2;
+            if (endHours >= 24) endHours -= 24;
+
+            // Форматируем время окончания с ведущим нулём
+            const selectedEndTime = endHours.toString().padStart(2, '0') + ':' + startParts[1] + ':00';
+
+            // Данные для отправки
+            const requestData = {
+                serviceId: parseInt(serviceId || '2'),
+                selectedDate: selectedDate.toISOString().split('T')[0],
+                selectedStartTime: selectedStartTime, // Теперь "09:00:00" а не "9:00:00"
+                selectedEndTime: selectedEndTime,
+                comment: comment,
+                userId: 1,
+                estimatedPrice: parseFloat(price || '20.00')
+            };
+
+            console.log('Отправка данных:', requestData);
+
+            const baseUrl = Platform.OS === 'android'
+                ? 'http://10.0.2.2:8080'
+                : 'http://192.168.31.18:8080';
+
+            const response = await fetch(`${baseUrl}/api/requests`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Ошибка ${response.status}: ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Заявка создана:', result);
+
+            router.push({
+                pathname: '/request-success',
+                params: { requestId: result.id.toString() }
+            } as any);
+
+        } catch (error: any) {
+            console.error('Ошибка:', error);
+
+            setAlertTitle('Ошибка создания заявки');
+            setAlertMessage(error.message || 'Не удалось создать заявку');
+            setShowAlert(true);
+        } finally {
+            setIsSubmitting(false);
         }
     };
+
 
     return (
         <ScreenContainer scrollable>
@@ -186,7 +296,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <WeekDaysSelector value={day} onChange={setDay} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.day && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -217,7 +326,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <TimeSlotsSelector value={time} onChange={setTime} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.time && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -248,7 +356,6 @@ export default function ServiceRequestScreen() {
                 </View>
                 <CommentInputWithAttach value={comment} onChange={setComment} />
 
-                {/* Сообщение об ошибке (если есть) */}
                 {errors.comment && (
                     <ThemedText style={{
                         color: '#FF3B30',
@@ -282,18 +389,19 @@ export default function ServiceRequestScreen() {
                     fontSize: 15,
                     color: '#DCDCDC',
                 }}>
-                    от 20 руб.
+                    {price ? `от ${price} руб.` : 'от 20 руб.'}
                 </ThemedText>
             </View>
 
             {/* Кнопка */}
             <ThemedButton
-                title="Оформить заявку"
+                title={isSubmitting ? "Отправка..." : "Оформить заявку"}
                 style={{
                     marginTop: 0,
                     marginBottom: 40
                 }}
                 onPress={handleSubmit}
+                disabled={isSubmitting}
             />
 
             {/* Наш системный алерт */}

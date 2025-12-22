@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenContainer } from '@/components/ScreenContainer';
 import { ThemedView } from '@/components/themed-view';
@@ -7,11 +7,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedButton } from '@/components/themed-button';
 import { ThemedCard } from '@/components/themed-card';
 import { useThemeColor } from '@/hooks/use-theme-color';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ThemedInput } from '@/components/themed-input';
 
 function CardItem({ type, last4 }: { type: string; last4: string }) {
-  const cardColor = useThemeColor({}, 'cardBackground');
   const textColor = useThemeColor({}, 'text');
   const accentRed = useThemeColor({}, 'accentRed');
 
@@ -27,7 +26,7 @@ function CardItem({ type, last4 }: { type: string; last4: string }) {
             marginRight: 16,
           }}
         />
-        <View style={{ justifyContent: 'center' }}>
+        <View>
           <ThemedText type="label">{type}</ThemedText>
           <ThemedText type="label">•••• {last4}</ThemedText>
         </View>
@@ -38,52 +37,99 @@ function CardItem({ type, last4 }: { type: string; last4: string }) {
 }
 
 export default function PaymentScreen() {
+  const params = useLocalSearchParams();
   const [amount, setAmount] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [billAmount, setBillAmount] = useState('0,00');
 
-  const handlePayment = () => {
-    router.replace('/(tabs)/finance');
+  const billId = params.billId as string;
+  const residentsCount = (params.residentsCount as string) || '1';
+
+  const baseUrl =
+    Platform.OS === 'android'
+      ? 'http://10.0.2.2:8080'
+      : 'http://192.168.31.18:8080';
+
+  const userId = 1;
+
+  useEffect(() => {
+    fetchBill();
+  }, []);
+
+  const fetchBill = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/api/finance/current/${userId}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      if (data?.accruedAmount != null) {
+        const formatted = data.accruedAmount.toFixed(2);
+        setAmount(formatted);
+        setBillAmount(formatted.replace('.', ','));
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки счёта:', e);
+    }
   };
 
-  const universalCount = 'По счетчикам 1,2,3,4';
-  const residentsCount = '4';
-  const meterSum = '93,60';
+  const handlePayment = async () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      alert('Введите корректную сумму');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${baseUrl}/api/finance/pay/${billId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `amount=${parseFloat(amount)}`,
+      });
+
+      if (!res.ok) {
+        throw new Error('Ошибка при оплате');
+      }
+
+      router.replace('/(tabs)/finance/paymentSuccess');
+    } catch (e) {
+      console.error('Payment error:', e);
+      alert('Ошибка при проведении оплаты');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScreenContainer scrollable>
-
       <ThemedText type="label" style={{ marginBottom: 8 }}>
         С карты
       </ThemedText>
+
       <CardItem type="MasterCard" last4="5479" />
 
-      <ThemedView withBackground={false} style={{ marginTop: 0 }}>
-        <ThemedText type="label">Универсальный подсчет</ThemedText>
-        <ThemedText type="paymentData">{universalCount}</ThemedText>
-      </ThemedView>
-
-      <ThemedView withBackground={false} style={{ marginTop: 16 }}>
+      <ThemedView withBackground={false} style={{ marginTop: 24 }}>
         <ThemedText type="label">Проживающих, чел.</ThemedText>
         <ThemedText type="paymentData">{residentsCount}</ThemedText>
       </ThemedView>
 
-      <ThemedView withBackground={false} style={{ marginTop: 16 , marginBottom: 16 }}>
-        <ThemedText type="label">По показаниям</ThemedText>
-        <ThemedText type="paymentData">{meterSum} руб.</ThemedText>
+      <ThemedView withBackground={false} style={{ marginVertical: 16 }}>
+        <ThemedText type="label">К оплате</ThemedText>
+        <ThemedText type="paymentData">{billAmount} руб.</ThemedText>
       </ThemedView>
 
       <ThemedInput
         label="Сумма платежа, руб."
         value={amount}
         onChangeText={setAmount}
-        placeholderValue="0"
       />
 
       <ThemedButton
-        title="Оплатить"
+        title={loading ? 'Обработка...' : 'Оплатить'}
         onPress={handlePayment}
+        disabled={loading}
       />
-
-      
     </ScreenContainer>
   );
 }
